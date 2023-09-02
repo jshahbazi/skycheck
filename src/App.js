@@ -6,7 +6,7 @@ import UploadButton from './Buttons';
 
 import WakeUp from './WakeUp';
 import Footer from './Footer';
-import { API_URL } from './config';
+// import { API_URL } from './config';
 import './App.css';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, Popup, Polygon } from 'react-leaflet';
@@ -23,20 +23,20 @@ export default function App() {
   const [fov, setFov] = useState(45); // field of view in degrees
 
   // Update the map position with GPS coordinates
-  useEffect(() => {
-    // Assume fetchGPS is a function that returns the current GPS position
-    // const newPosition = fetchGPS();
-    // setMapPosition(newPosition);
-  }, [/* dependency to determine when to fetch GPS data */]);
+  // useEffect(() => {
+  //   // Assume fetchGPS is a function that returns the current GPS position
+  //   // const newPosition = fetchGPS();
+  //   // setMapPosition(newPosition);
+  // }, [/* dependency to determine when to fetch GPS data */]);
 
-  useEffect(() => {
-    fetch(`${API_URL}/wake-up`)
-      .then(res => {
-        if (res.ok) {
-          setLoading(false);
-        }
-      });
-  }, []);
+  // useEffect(() => {
+  //   fetch(`${API_URL}/wake-up`)
+  //     .then(res => {
+  //       if (res.ok) {
+  //         setLoading(false);
+  //       }
+  //     });
+  // }, []);
 
   const onChange = e => {
     const errs = [];
