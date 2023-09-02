@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Spinner from './Spinner';
 import Images from './Images';
-// import Buttons from './Buttons';
 import UploadButton from './Buttons';
-
-import WakeUp from './WakeUp';
 import Footer from './Footer';
-// import { API_URL } from './config';
 import './App.css';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, Popup, Polygon } from 'react-leaflet';
@@ -99,8 +95,6 @@ export default function App() {
 
   const content = () => {
     switch (true) {
-      case loading:
-        return <WakeUp />;
       case uploading:
         return <Spinner />;
       case images.length > 0:
