@@ -136,17 +136,7 @@ export default function App() {
           <ul>
             <li><a href='#'>About</a></li>
             <li><a href='#'>Contact</a></li>
-            <button
-              onClick={() => {
-                window.open(
-                  "https://www.zeffy.com/en-US/donation-form/01e7c013-796a-4574-b8b3-3c8c96a6cefd",
-                  "_blank"
-                );
-              }}
-            >
-              Donate
-            </button>
-
+            <li><a href='https://www.zeffy.com/en-US/donation-form/01e7c013-796a-4574-b8b3-3c8c96a6cefd' target="_blank" rel="noopener noreferrer">Donate</a></li>
           </ul>
         </nav>
       </header>
