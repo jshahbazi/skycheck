@@ -40,34 +40,23 @@ export default function App() {
 
   async function getSignedUrl(fileName) {
     try {
-      // Define the payload.
       const payload = {
         fileName: fileName
       };
-  
-      try {
-        const post_response = await axios.post('/upload', { payload });
-        // await statusCheck(post_response);
-    } catch (error) {
-        console.error(error);
-      }
-      
+      const post_response = await axios.post('/upload', { payload });
       console.log("post_response status: ", post_response.status);
       console.log("post_response data: ", post_response.data);
-
       const data = await post_response.json();
-  
-      // Here, you can use the signedUrl from the response, e.g., for uploads.
+      console.log("data: ", data);
       console.log("Received signed URL:", data.signedUrl);
-  
       return data.signedUrl;
-  
+
     } catch (error) {
       console.error("There was a problem with the fetch operation:", error.message);
     }
   }
 
-  
+
 
   const onChange = e => {
     const errs = [];
