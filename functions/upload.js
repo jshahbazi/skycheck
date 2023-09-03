@@ -10,8 +10,11 @@ import axios from 'axios';
 
 
 export const onRequestPost = async ({ request }) => {
+  return new Response("Hello, world!")
   // const { name } = await request.json()
   const { fileName } = request.body;
+  console.log("request: ", request);
+  console.log("fileName: ", fileName);
 
   try {
     const signedUrl = await getSignedUrl(

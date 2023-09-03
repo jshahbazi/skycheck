@@ -52,7 +52,7 @@ export default function App() {
       return data.signedUrl;
 
     } catch (error) {
-      console.error("There was a problem with the fetch operation:", error.message);
+      console.error("Error:", error.message);
     }
   }
 
