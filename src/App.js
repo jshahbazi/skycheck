@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Spinner from './components/Spinner';
 import Images from './components/Images';
 import UploadButton from './components/Buttons';
-import Footer from './Footer';
+import Footer from './components/Footer';
+import { r2 } from './components/r2';
 import './App.css';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, Popup, Polygon } from 'react-leaflet';
 import L from 'leaflet';
+import axios from 'axios';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -34,21 +38,71 @@ export default function App() {
   //     });
   // }, []);
 
+  async function getSignedUrl(fileName) {
+    try {
+      // Define the payload.
+      const payload = {
+        fileName: fileName
+      };
+  
+      try {
+        const post_response = await axios.post('/upload', { payload });
+        // await statusCheck(post_response);
+    } catch (error) {
+        console.error(error);
+      }
+      
+      console.log("post_response status: ", post_response.status);
+      console.log("post_response data: ", post_response.data);
+
+      const data = await post_response.json();
+  
+      // Here, you can use the signedUrl from the response, e.g., for uploads.
+      console.log("Received signed URL:", data.signedUrl);
+  
+      return data.signedUrl;
+  
+    } catch (error) {
+      console.error("There was a problem with the fetch operation:", error.message);
+    }
+  }
+
+  
+
   const onChange = e => {
     const errs = [];
     const files = Array.from(e.target.files);
     const formData = new FormData();
-    const types = ['image/png', 'image/jpeg', 'image/gif'];
+    const types = ['image/png', 'image/jpeg', 'image/heic'];
 
-    // files.forEach((file, i) => {
-    //   if (types.every(type => file.type !== type)) {
-    //     errs.push(`'${file.type}' is not a supported format`);
-    //   }
-    //   if (file.size > 150000) {
-    //     errs.push(`'${file.name}' is too large, please pick a smaller file`);
-    //   }
-    //   formData.append(i, file);
-    // });
+    if (files.length > 1) {
+      toast.error('Only 1 image can currently be uploaded at a time');
+    }
+
+    files.forEach(async (file) => {
+      if (file.type == '') {
+        toast.error(`Unknown file type`)
+        return;
+      }
+      if (types.every(type => file.type !== type)) {
+        toast.error(`'${file.type}' is not a supported format`);
+        return;
+      }
+      if (file.size > 150000000) {
+        toast.error(`'${file.name}' is too large, please pick a smaller file`);
+        return;
+      }
+      console.log("file name: ", file.name);
+
+      setUploading(true);
+
+      let signedUrl = await getSignedUrl(file.name);
+
+      console.log("signedUrl: ", signedUrl);
+
+
+
+    });
 
     // setUploading(true);
 
@@ -140,6 +194,7 @@ export default function App() {
           </ul>
         </nav>
       </header>
+      <ToastContainer />
       <div className='other-text'>
         Check the sky for aircraft and other objects. Upload original photos that contain GPS data and we will analyze them for you.
       </div>

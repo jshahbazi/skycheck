@@ -4,7 +4,7 @@ import { faMediumM, faGithub } from '@fortawesome/fontawesome-free'
 
 const Footer = () => (
   <footer>
-    <a 
+    {/* <a 
       href='https://skycheck.io' 
       title='SkyCheck'
       className={'small-button medium'}
@@ -17,7 +17,7 @@ const Footer = () => (
       className={'small-button github'}
     >
       <FontAwesomeIcon icon={faGithub} size='3x' color='#fff' />
-    </a>
+    </a> */}
   </footer>
 );
 

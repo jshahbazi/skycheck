@@ -6,13 +6,13 @@ import Map from './Map'; // Import the Map component
 const UploadButton = ({ onChange }) => (
   <div>
     <div className='upload-text'>
-      <p>Upload your images here:</p>
+      <p>Upload your image here:</p>
     </div>
     <div className='button fadein'>
       <label htmlFor='single'>
         <FontAwesomeIcon icon={faImage} color='#3B5998' size='10x' />
       </label>
-      <input type='file' id='single' accept='image/*' onChange={onChange} />
+      <input type='file' id='single' onChange={onChange} />
     </div>
     <p></p>
   </div>
