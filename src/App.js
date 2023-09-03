@@ -136,7 +136,7 @@ export default function App() {
           <ul>
             <li><a href='#'>About</a></li>
             <li><a href='#'>Contact</a></li>
-            <li><a href='#'>Donate</a></li>
+            <li><a href='https://www.zeffy.com/en-US/embed/donation-form/01e7c013-796a-4574-b8b3-3c8c96a6cefd?modal=true'>Donate</a></li>
           </ul>
         </nav>
       </header>
