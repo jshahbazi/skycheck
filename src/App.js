@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Spinner from './Spinner';
-import Images from './Images';
-import UploadButton from './Buttons';
+import Spinner from './components/Spinner';
+import Images from './components/Images';
+import UploadButton from './components/Buttons';
 import Footer from './Footer';
 import './App.css';
 import 'leaflet/dist/leaflet.css';
