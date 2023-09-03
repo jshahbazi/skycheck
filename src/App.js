@@ -136,9 +136,17 @@ export default function App() {
           <ul>
             <li><a href='#'>About</a></li>
             <li><a href='#'>Contact</a></li>
-            <button zeffy-form-link="https://www.zeffy.com/en-US/embed/donation-form/01e7c013-796a-4574-b8b3-3c8c96a6cefd?modal=true">
+            <button
+              onClick={() => {
+                window.open(
+                  "https://www.zeffy.com/en-US/embed/donation-form/01e7c013-796a-4574-b8b3-3c8c96a6cefd?modal=true",
+                  "_blank" // This opens the link in a new tab. Remove this if you want to open in the same tab.
+                );
+              }}
+            >
               Donate
             </button>
+
           </ul>
         </nav>
       </header>
