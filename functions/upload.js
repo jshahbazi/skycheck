@@ -1,4 +1,5 @@
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { PutObjectCommand } from '@aws-sdk/client-s3'
 import axios from 'axios';
 
 
@@ -7,29 +8,6 @@ import axios from 'axios';
 //   return new Response("Hello, world!")
 // }
 
-
-export const getSignedUrl = async ({ fileName }) => {
-  try {
-    console.log(`Generating an upload URL!`);
-
-    const signedUrl = await getSignedUrl(
-      r2,
-      new PutObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME,
-        Key: fileName,
-      }),
-      { expiresIn: 60 }
-    );
-
-    console.log(`Success generating upload URL!`);
-
-    return signedUrl;
-
-  } catch (err) {
-    console.log(`ERROR: ${err.message || 'An error occurred'}`);
-    return err.message;
-  }
-}
 
 export const onRequestPost = async ({ request }) => {
   // const { name } = await request.json()
@@ -46,14 +24,11 @@ export const onRequestPost = async ({ request }) => {
     );
     console.log(`Success generating upload URL!`);
 
-    return signedUrl;
+    return new Response(JSON.stringify({ signedUrl });
 
-} catch (error) {
+  } catch (error) {
     console.error(error);
+    return new Response(error.message, { status: 500 });
   }
 
-
-
-
-  return new Response(`Hello, ${name}!`)
 }
