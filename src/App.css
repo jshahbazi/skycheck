@@ -262,16 +262,19 @@ footer .small-button.medium {
   gap: 20px;
 }
 
-.menu li a {
+.menu li a, .menu li button {
   text-decoration: none;
-  color: black;
-  /* Change link color to black */
-  font-weight: 500;
-  /* Apply a medium font weight */
+  color: black; /* Change link/button color to black */
+  font-weight: 500; /* Apply a medium font weight */
   transition: color 0.3s ease;
+  background: none; /* Remove button default background */
+  border: none; /* Remove button default borders */
+  cursor: pointer; /* Cursor appears as hand pointer, indicating a clickable item */
+  padding: 0; /* Remove any default padding */
+  outline: none; /* Remove focus outline */
 }
 
-.menu li a:hover {
+.menu li a:hover button:hover {
   color: #6d84b4;
 }
 
@@ -304,3 +307,4 @@ footer .small-button.medium {
   width: 100wh;
   height: 50vh;
 }
+

@@ -139,8 +139,8 @@ export default function App() {
             <button
               onClick={() => {
                 window.open(
-                  "https://www.zeffy.com/en-US/embed/donation-form/01e7c013-796a-4574-b8b3-3c8c96a6cefd?modal=true",
-                  "_blank" // This opens the link in a new tab. Remove this if you want to open in the same tab.
+                  "https://www.zeffy.com/en-US/donation-form/01e7c013-796a-4574-b8b3-3c8c96a6cefd",
+                  "_blank"
                 );
               }}
             >
