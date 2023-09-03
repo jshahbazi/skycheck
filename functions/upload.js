@@ -24,7 +24,7 @@ export const onRequestPost = async ({ request }) => {
     );
     console.log(`Success generating upload URL!`);
 
-    return new Response(JSON.stringify({ signedUrl });
+    return new Response(JSON.stringify({ signedUrl }));
 
   } catch (error) {
     console.error(error);
