@@ -64,8 +64,8 @@ export default function App() {
         region: 'auto',
         endpoint: `https://${process.env.REACT_APP_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
         credentials: {
-          accessKeyId: process.env.REACT_APP_R2_ACCESS_KEY_ID || '',
-          secretAccessKey: process.env.REACT_APP_R2_SECRET_ACCESS_KEY || '',
+          accessKeyId: process.env.REACT_APP_R2_ACCESS_KEY_ID,
+          secretAccessKey: process.env.REACT_APP_R2_SECRET_ACCESS_KEY,
         },
       })
 
@@ -105,7 +105,7 @@ export default function App() {
           'Content-Type': file.type,
         },
       };
-      const result = await axios.post(signedUrl, file, options);
+      const result = await axios.put(signedUrl, file, options);
       console.log("upload status: ", result.status);
       console.log("upload data: ", result.data);
       return result.status;
