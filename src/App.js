@@ -12,6 +12,10 @@ import { MapContainer, TileLayer, Marker, Popup, Polygon } from 'react-leaflet';
 import L from 'leaflet';
 import axios from 'axios';
 
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client } from '@aws-sdk/client-s3'
+
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -21,6 +25,8 @@ export default function App() {
   const [planes, setPlanes] = useState([]); // assume planes is an array of objects {id, position: [lat, lon]}
   const [bearing, setBearing] = useState(0); // just an example value
   const [fov, setFov] = useState(45); // field of view in degrees
+
+  // const [file, setFile] = useState<File | undefined>(undefined);
 
   // Update the map position with GPS coordinates
   // useEffect(() => {
@@ -38,23 +44,76 @@ export default function App() {
   //     });
   // }, []);
 
-  async function getSignedUrl(fileName) {
+  async function getSignedUrlForFile(fileName) {
     try {
       const payload = {
         fileName: fileName
       };
-      const post_response = await axios.post('/upload', { payload });
-      console.log("post_response status: ", post_response.status);
-      console.log("post_response data: ", post_response.data);
-      const data = await post_response.json();
-      console.log("data: ", data);
-      console.log("Received signed URL:", data.signedUrl);
-      return data.signedUrl;
+      // const post_response = await axios.post('/upload', { payload });
+      // console.log("post_response status: ", post_response.status);
+      // console.log("post_response data: ", post_response.data);
+      // const data = await post_response.json();
+      // console.log("data: ", data);
+      // console.log("Received signed URL:", data.signedUrl);
+
+      // const { fileName } = request.body;
+      // console.log("request: ", request);
+      console.log("fileName: ", fileName);
+
+      const r2 = new S3Client({
+        region: 'auto',
+        endpoint: `https://${process.env.REACT_APP_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+        credentials: {
+          accessKeyId: process.env.REACT_APP_R2_ACCESS_KEY_ID || '',
+          secretAccessKey: process.env.REACT_APP_R2_SECRET_ACCESS_KEY || '',
+        },
+      })
+
+      console.log("process.env.REACT_APP_R2_BUCKET_NAME: ", process.env.REACT_APP_R2_BUCKET_NAME);
+
+      try {
+        const signedUrl = await getSignedUrl(
+          r2,
+          new PutObjectCommand({
+            Bucket: process.env.REACT_APP_R2_BUCKET_NAME,
+            Key: fileName,
+          }),
+          { expiresIn: 60 }
+        );
+        console.log("Success generating upload URL: ", signedUrl);
+
+        return signedUrl;
+
+      } catch (error) {
+        console.error(error);
+        return error;
+        // return new Response(error.message, { status: 500 });
+      }
+
+
+      // return data.signedUrl;
 
     } catch (error) {
       console.error("Error:", error.message);
     }
   }
+
+  async function uploadFile(file, signedUrl) {
+    try {
+      const options = {
+        headers: {
+          'Content-Type': file.type,
+        },
+      };
+      const result = await axios.post(signedUrl, file, options);
+      console.log("upload status: ", result.status);
+      console.log("upload data: ", result.data);
+      return result.status;
+    } catch (error) {
+      console.error("Error:", error.message);
+    }
+  }
+  
 
 
 
@@ -85,9 +144,13 @@ export default function App() {
 
       setUploading(true);
 
-      let signedUrl = await getSignedUrl(file.name);
+      let signedUrl = await getSignedUrlForFile(file.name);
 
       console.log("signedUrl: ", signedUrl);
+
+      let uploadStatus = await uploadFile(file, signedUrl);
+
+      console.log("uploadStatus: ", uploadStatus);
 
 
 
