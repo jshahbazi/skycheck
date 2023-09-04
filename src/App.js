@@ -143,6 +143,7 @@ export default function App() {
       console.log("file name: ", file.name);
 
       setUploading(true);
+      
 
       let signedUrl = await getSignedUrlForFile(file.name);
 
