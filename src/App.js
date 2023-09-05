@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Spinner from './components/Spinner';
-import Images from './components/Images';
+import ImageList from './components/Images';
 import UploadButton from './components/Buttons';
 import Footer from './components/Footer';
 import { r2 } from './components/r2';
@@ -15,6 +15,13 @@ import axios from 'axios';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import { S3Client } from '@aws-sdk/client-s3'
+
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlane } from '@fortawesome/free-solid-svg-icons'
+
+import heic2any from 'heic2any';
+
+import exifr from 'exifr';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -44,22 +51,9 @@ export default function App() {
   //     });
   // }, []);
 
-  async function getSignedUrlForFile(fileName) {
+  async function getSignedUrlForFile(fileName, action = 'putObject') {
     try {
-      const payload = {
-        fileName: fileName
-      };
-      // const post_response = await axios.post('/upload', { payload });
-      // console.log("post_response status: ", post_response.status);
-      // console.log("post_response data: ", post_response.data);
-      // const data = await post_response.json();
-      // console.log("data: ", data);
-      // console.log("Received signed URL:", data.signedUrl);
-
-      // const { fileName } = request.body;
-      // console.log("request: ", request);
       console.log("fileName: ", fileName);
-
       const r2 = new S3Client({
         region: 'auto',
         endpoint: `https://${process.env.REACT_APP_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -68,11 +62,11 @@ export default function App() {
           secretAccessKey: process.env.REACT_APP_R2_SECRET_ACCESS_KEY,
         },
       })
-
       console.log("process.env.REACT_APP_R2_BUCKET_NAME: ", process.env.REACT_APP_R2_BUCKET_NAME);
 
-      try {
-        const signedUrl = await getSignedUrl(
+      let signedUrl = '';
+      if (action === 'putObject') {
+        signedUrl = await getSignedUrl(
           r2,
           new PutObjectCommand({
             Bucket: process.env.REACT_APP_R2_BUCKET_NAME,
@@ -81,46 +75,120 @@ export default function App() {
           { expiresIn: 60 }
         );
         console.log("Success generating upload URL: ", signedUrl);
-
-        return signedUrl;
-
-      } catch (error) {
-        console.error(error);
-        return error;
-        // return new Response(error.message, { status: 500 });
+      }
+      else if (action === 'getObject') {
+        signedUrl = await getSignedUrl(
+          r2,
+          new GetObjectCommand({
+            Bucket: process.env.REACT_APP_R2_BUCKET_NAME,
+            Key: fileName,
+          }),
+          { expiresIn: 60 }
+        );
+        console.log("Success generating download URL: ", signedUrl);
       }
 
-
-      // return data.signedUrl;
+      return signedUrl;
 
     } catch (error) {
       console.error("Error:", error.message);
+      return error;
     }
   }
 
-  async function uploadFile(file, signedUrl) {
+  async function uploadFile(fileOrBlob, signedUrl, mimeType) {
     try {
       const options = {
         headers: {
-          'Content-Type': file.type,
+          'Content-Type': mimeType || fileOrBlob.type || 'application/octet-stream',  // Use provided mimeType, or fileOrBlob's type, or default to 'application/octet-stream'
         },
       };
-      const result = await axios.put(signedUrl, file, options);
+      const result = await axios.put(signedUrl, fileOrBlob, options);
       console.log("upload status: ", result.status);
-      console.log("upload data: ", result.data);
+      // console.log("upload data: ", result.data);
       return result.status;
     } catch (error) {
       console.error("Error:", error.message);
     }
   }
-  
+
+  async function downloadFile(signedUrl) {
+    try {
+      const response = await axios.get(signedUrl, { responseType: 'blob' });
+      console.log("download status: ", response.status);
+      console.log("download result: ", response);
+      console.log(typeof response.data);
+
+      return response.data;
+    } catch (error) {
+      console.error("Error:", error.message);
+    }
+  }
+
+  //   function base64ToBlob(base64, mimeType = '') {
+  //     // Decode the base64 string
+  //     const byteString = atob(base64.split(',')[1]);
+
+  //     // Create a Uint8Array from the byte string
+  //     const arrayBuffer = new ArrayBuffer(byteString.length);
+  //     const uint8Array = new Uint8Array(arrayBuffer);
+  //     for (let i = 0; i < byteString.length; i++) {
+  //         uint8Array[i] = byteString.charCodeAt(i);
+  //     }
+
+  //     // Create a blob from the Uint8Array
+  //     const blob = new Blob([uint8Array], { type: mimeType });
+
+  //     return blob;
+  // }
+
+
+
+
+  async function checkExifData(image) {
+    EXIF.getData(image, function () {
+      const allMetaData = EXIF.getAllTags(this);
+      if (Object.keys(allMetaData).length === 0) {
+        console.log("This image doesn't have EXIF data.");
+      } else {
+        console.log("This image has EXIF data:", allMetaData);
+      }
+    });
+  }
+
+
+  async function extractExifDataFromBlob(blob) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      // const objectURL = URL.createObjectURL(blob);
+
+      image.onload = function () {
+        EXIF.getData(image, function () {
+          const allMetaData = EXIF.getAllTags(this);
+          console.log("allMetaData: ", allMetaData);
+
+          if (Object.keys(allMetaData).length === 0) {
+            reject(new Error("This image doesn't have EXIF data."));
+          } else {
+            resolve(allMetaData);
+          }
+
+          // URL.revokeObjectURL(objectURL);  // Clean up the object URL
+        });
+      };
+
+      image.onerror = function () {
+        reject(new Error("Failed to load the image from blob."));
+      };
+
+      image.src = objectURL;
+    });
+  }
 
 
 
   const onChange = e => {
-    const errs = [];
     const files = Array.from(e.target.files);
-    const formData = new FormData();
     const types = ['image/png', 'image/jpeg', 'image/heic'];
 
     if (files.length > 1) {
@@ -128,6 +196,16 @@ export default function App() {
     }
 
     files.forEach(async (file) => {
+
+      const exif = await exifr.parse(file);
+      if (exif) {
+        console.log('EXIF data:', exif);
+        // Handle or display the exif data as needed
+      } else {
+        toast.error('No EXIF data found.');
+        return;
+      }
+
       if (file.type == '') {
         toast.error(`Unknown file type`)
         return;
@@ -140,47 +218,30 @@ export default function App() {
         toast.error(`'${file.name}' is too large, please pick a smaller file`);
         return;
       }
-      console.log("file name: ", file.name);
 
       setUploading(true);
+      toast.info('Converting image to jpeg...', { autoClose: 3000 });
+      const convertedBlob = await heic2any({
+        blob: file,
+        toType: 'image/jpeg',
+        quality: 0.8
+      });
+
+      toast.info('Uploading image...', { autoClose: 2000 });
+      let signedUrl = await getSignedUrlForFile(file.name, 'putObject');
+      let uploadStatus = await uploadFile(convertedBlob, signedUrl, 'image/jpeg');
       
-      let signedUrl = await getSignedUrlForFile(file.name);
+      signedUrl = await getSignedUrlForFile(file.name, 'getObject');
 
-      console.log("signedUrl: ", signedUrl);
-
-      let uploadStatus = await uploadFile(file, signedUrl);
-
-      console.log("uploadStatus: ", uploadStatus);
-
-
+      setImages(prevImages => [...prevImages, signedUrl]);
+      setUploading(false);
 
     });
 
-    // setUploading(true);
-
-    // fetch(`${API_URL}/image-upload`, {
-    //   method: 'POST',
-    //   body: formData
-    // })
-    //   .then(res => {
-    //     if (!res.ok) {
-    //       throw res;
-    //     }
-    //     return res.json();
-    //   })
-    //   .then(imgs => {
-    //     setUploading(false);
-    //     setImages(imgs);
-    //   })
-    //   .catch(err => {
-    //     err.json().then(e => {
-    //       setUploading(false);
-    //     });
-    //   });
   };
 
   const removeImage = id => {
-    setImages(prevImages => prevImages.filter(image => image.public_id !== id));
+    setImages(prevImages => prevImages.filter(image => image !== id));
   };
 
 
@@ -194,10 +255,19 @@ export default function App() {
     ];
   };
 
-  const planeIcon = new L.Icon({
-    iconUrl: '/path-to-your-plane-icon.png',
-    iconSize: [32, 32],
-  });
+  // const planeIcon = new L.Icon({
+  //   iconUrl: '/path-to-your-plane-icon.png',
+  //   iconSize: [32, 32],
+  // });
+
+  const planeIcon = () => (
+    <FontAwesomeIcon icon={faPlane} />
+  );
+
+  const onImagesError = (image) => {
+    removeImage(image);
+    toast.error("Failed to load the image.");
+  }
 
   const content = () => {
     switch (true) {
@@ -205,10 +275,13 @@ export default function App() {
         return <Spinner />;
       case images.length > 0:
         return (
-          <Images
+          <div>
+          <ImageList
             images={images}
             removeImage={removeImage}
-          />
+            onError={onImagesError}
+            />
+            </div>
         );
       default:
         return (
@@ -250,6 +323,8 @@ export default function App() {
       <div className='other-text'>
         Check the sky for aircraft and other objects. Upload original photos that contain GPS data and we will analyze them for you.
       </div>
+
+      {/* <UploadButton onChange={onChange} /> */}
       <div className='buttons'>{content()}</div>
 
       <Footer />

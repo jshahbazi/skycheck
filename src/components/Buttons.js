@@ -1,7 +1,6 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage } from '@fortawesome/free-solid-svg-icons';
-import Map from './Map'; // Import the Map component
 
 const UploadButton = ({ onChange }) => (
   <div>
