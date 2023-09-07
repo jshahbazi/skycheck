@@ -8,7 +8,13 @@ import { S3Client } from '@aws-sdk/client-s3'
 // export const onRequestGet = () => {
 //   return new Response("Hello, world!")
 // }
+export async function onRequestGet(context) {
+  // Create a prepared statement with our query
+  const ps = context.env.SKYCHECK_DB.prepare('SELECT * from images');
+  const data = await ps.first();
 
+  return Response.json(data);
+}
 
 
 export const onRequestPost = async ({ request }) => {

@@ -11,6 +11,7 @@ import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, Popup, Polygon } from 'react-leaflet';
 import L from 'leaflet';
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
 
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
@@ -22,6 +23,7 @@ import { faPlane } from '@fortawesome/free-solid-svg-icons'
 import heic2any from 'heic2any';
 
 import exifr from 'exifr';
+
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -53,7 +55,7 @@ export default function App() {
 
   async function getSignedUrlForFile(fileName, action = 'putObject') {
     try {
-      console.log("fileName: ", fileName);
+      // console.log("fileName: ", fileName);
       const r2 = new S3Client({
         region: 'auto',
         endpoint: `https://${process.env.REACT_APP_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -62,7 +64,7 @@ export default function App() {
           secretAccessKey: process.env.REACT_APP_R2_SECRET_ACCESS_KEY,
         },
       })
-      console.log("process.env.REACT_APP_R2_BUCKET_NAME: ", process.env.REACT_APP_R2_BUCKET_NAME);
+      // console.log("process.env.REACT_APP_R2_BUCKET_NAME: ", process.env.REACT_APP_R2_BUCKET_NAME);
 
       let signedUrl = '';
       if (action === 'putObject') {
@@ -74,7 +76,7 @@ export default function App() {
           }),
           { expiresIn: 60 }
         );
-        console.log("Success generating upload URL: ", signedUrl);
+        // console.log("Success generating upload URL: ", signedUrl);
       }
       else if (action === 'getObject') {
         signedUrl = await getSignedUrl(
@@ -85,7 +87,7 @@ export default function App() {
           }),
           { expiresIn: 60 }
         );
-        console.log("Success generating download URL: ", signedUrl);
+        // console.log("Success generating download URL: ", signedUrl);
       }
 
       return signedUrl;
@@ -104,7 +106,7 @@ export default function App() {
         },
       };
       const result = await axios.put(signedUrl, fileOrBlob, options);
-      console.log("upload status: ", result.status);
+      // console.log("upload status: ", result.status);
       // console.log("upload data: ", result.data);
       return result.status;
     } catch (error) {
@@ -145,45 +147,63 @@ export default function App() {
 
 
 
-  async function checkExifData(image) {
-    EXIF.getData(image, function () {
-      const allMetaData = EXIF.getAllTags(this);
-      if (Object.keys(allMetaData).length === 0) {
-        console.log("This image doesn't have EXIF data.");
-      } else {
-        console.log("This image has EXIF data:", allMetaData);
-      }
-    });
-  }
+  // async function checkExifData(image) {
+  //   EXIF.getData(image, function () {
+  //     const allMetaData = EXIF.getAllTags(this);
+  //     if (Object.keys(allMetaData).length === 0) {
+  //       console.log("This image doesn't have EXIF data.");
+  //     } else {
+  //       console.log("This image has EXIF data:", allMetaData);
+  //     }
+  //   });
+  // }
 
 
-  async function extractExifDataFromBlob(blob) {
-    return new Promise((resolve, reject) => {
-      const image = new Image();
-      // const objectURL = URL.createObjectURL(blob);
+  // async function extractExifDataFromBlob(blob) {
+  //   return new Promise((resolve, reject) => {
+  //     const image = new Image();
+  //     // const objectURL = URL.createObjectURL(blob);
 
-      image.onload = function () {
-        EXIF.getData(image, function () {
-          const allMetaData = EXIF.getAllTags(this);
-          console.log("allMetaData: ", allMetaData);
+  //     image.onload = function () {
+  //       EXIF.getData(image, function () {
+  //         const allMetaData = EXIF.getAllTags(this);
+  //         console.log("allMetaData: ", allMetaData);
 
-          if (Object.keys(allMetaData).length === 0) {
-            reject(new Error("This image doesn't have EXIF data."));
-          } else {
-            resolve(allMetaData);
-          }
+  //         if (Object.keys(allMetaData).length === 0) {
+  //           reject(new Error("This image doesn't have EXIF data."));
+  //         } else {
+  //           resolve(allMetaData);
+  //         }
 
-          // URL.revokeObjectURL(objectURL);  // Clean up the object URL
-        });
-      };
+  //         // URL.revokeObjectURL(objectURL);  // Clean up the object URL
+  //       });
+  //     };
 
-      image.onerror = function () {
-        reject(new Error("Failed to load the image from blob."));
-      };
+  //     image.onerror = function () {
+  //       reject(new Error("Failed to load the image from blob."));
+  //     };
 
-      image.src = objectURL;
-    });
-  }
+  //     image.src = objectURL;
+  //   });
+  // }
+
+  // async function parseEXIF(file) {
+
+  // }
+
+  //   function convertToBlob(file) {
+  //     const reader = new FileReader();
+
+  //     reader.onload = function(event) {
+  //         const arrayBuffer = event.target.result;
+  //         const blob = new Blob([arrayBuffer], {type: file.type});
+
+  //         // console.log(blob);
+  //       return blob;
+  //     };
+
+  //     reader.readAsArrayBuffer(file);
+  // }
 
 
 
@@ -196,15 +216,43 @@ export default function App() {
     }
 
     files.forEach(async (file) => {
+      let exifData = null;
+      let mimeType = file.type;
+      let fileExtension = file.name.split('.').pop();
 
       const exif = await exifr.parse(file);
       if (exif) {
-        console.log('EXIF data:', exif);
-        // Handle or display the exif data as needed
+        const exifDateTimeStr = exif.DateTimeOriginal || exif.DateTimeDigitized || exif.CreateDate; // Example ISO string format
+        const dateObj = new Date(exifDateTimeStr);
+        const unixTimestamp = Math.floor(dateObj.getTime() / 1000);
+        // console.log(unixTimestamp);
+
+        
+        exifData = {
+          Camera: exif.Make + " " + exif.Model, // Combining the Make and Model to get the Camera name
+          DigitalZoomRatio: exif.DigitalZoomRatio,
+          Latitude: exif.latitude, // exifr automatically parses GPS Latitude and Longitude into these keys for ease of use
+          Longitude: exif.longitude,
+          CameraBearing: exif.GPSImgDirection, // This key holds the direction of the camera when the photo was taken
+          PixelWidth: exif.ImageWidth || exif.ExifImageWidth,
+          PixelHeight: exif.ImageHeight || exif.ExifImageHeight,
+          FocalLength35mm: exif.FocalLengthIn35mmFormat,
+          FocalLength: exif.FocalLength,
+          Timestamp: unixTimestamp,
+          GPSAltitude: exif.GPSAltitude,
+          GPSHPositioningError: exif.GPSHPositioningError, // This might not always be present
+          GPSSpeed: exif.GPSSpeed,
+          GPSSpeedRef: exif.GPSSpeedRef,
+          ExposureTime: exif.ExposureTime,
+          ShutterSpeedValue: exif.ShutterSpeedValue
+        };
+
+        // console.log(exifData);
       } else {
-        toast.error('No EXIF data found.');
-        return;
+        console.error("No EXIF data found.");
       }
+
+      
 
       if (file.type == '') {
         toast.error(`Unknown file type`)
@@ -220,21 +268,46 @@ export default function App() {
       }
 
       setUploading(true);
-      toast.info('Converting image to jpeg...', { autoClose: 3000 });
-      const convertedBlob = await heic2any({
-        blob: file,
-        toType: 'image/jpeg',
-        quality: 0.8
-      });
+
+      let convertedBlob = null;
+      if (file.type === 'image/heic') {
+        toast.info('Converting image to jpeg...', { autoClose: 3000 });
+        convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 1.0
+        });
+        mimeType = 'image/jpeg';
+        fileExtension = '.jpg';
+      } else {
+        convertedBlob = file
+      }
+
+      const generatedUUID = uuidv4();
+      // const fileExtension = file.name.split('.').pop();
+      const newFileName = `${generatedUUID}${fileExtension}`;
 
       toast.info('Uploading image...', { autoClose: 2000 });
-      let signedUrl = await getSignedUrlForFile(file.name, 'putObject');
+      let signedUrl = await getSignedUrlForFile(newFileName, 'putObject');
       let uploadStatus = await uploadFile(convertedBlob, signedUrl, 'image/jpeg');
-      
-      signedUrl = await getSignedUrlForFile(file.name, 'getObject');
+      signedUrl = await getSignedUrlForFile(newFileName, 'getObject');
+
 
       setImages(prevImages => [...prevImages, signedUrl]);
       setUploading(false);
+
+      const dataToSave = {
+        fileName: newFileName,
+        mimeType: mimeType,
+        exifData: exifData
+      };
+      console.log("dataToSave: ", dataToSave);
+
+      const result = await axios.get("/upload");
+      // console.log("upload status: ", result.status);
+      // console.log("upload data: ", result.data);
+      console.log("d1 result: ", result);
+
 
     });
 
@@ -246,8 +319,6 @@ export default function App() {
 
 
   const getFOVPolygon = () => {
-    // This is a mock function to get points for FOV, you'd replace this with actual math to compute the triangular region or whatever shape you need
-    // It's highly dependent on your specific requirements, FOV, and bearing
     return [
       mapPosition,
       [mapPosition[0] + 0.01, mapPosition[1] + 0.01],
@@ -276,12 +347,12 @@ export default function App() {
       case images.length > 0:
         return (
           <div>
-          <ImageList
-            images={images}
-            removeImage={removeImage}
-            onError={onImagesError}
+            <ImageList
+              images={images}
+              removeImage={removeImage}
+              onError={onImagesError}
             />
-            </div>
+          </div>
         );
       default:
         return (
