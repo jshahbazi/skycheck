@@ -303,7 +303,11 @@ export default function App() {
         //     "Content-Type": "json"
         //   },
         // };
-        const result = await axios.post("/write_to_r1", dataToSave);
+        const result = await axios.post("/write_to_r1", dataToSave, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
         console.log("write_to_r1 status: ", result.status);
         console.log("write_to_r1 data: ", result.data);
         return result.status;
