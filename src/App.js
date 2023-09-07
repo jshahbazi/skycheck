@@ -1,29 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import Spinner from './components/Spinner';
-import ImageList from './components/Images';
-import UploadButton from './components/Buttons';
-import Footer from './components/Footer';
-import { r2 } from './components/r2';
-import './App.css';
-import 'leaflet/dist/leaflet.css';
-import { MapContainer, TileLayer, Marker, Popup, Polygon } from 'react-leaflet';
-import L from 'leaflet';
-import axios from 'axios';
-import { v4 as uuidv4 } from 'uuid';
+import React, { useState, useEffect } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import Spinner from "./components/Spinner";
+import ImageList from "./components/Images";
+import UploadButton from "./components/Buttons";
+import Footer from "./components/Footer";
+import { r2 } from "./components/r2";
+import "./App.css";
+import "leaflet/dist/leaflet.css";
+import { MapContainer, TileLayer, Marker, Popup, Polygon } from "react-leaflet";
+import L from "leaflet";
+import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
-import { S3Client } from '@aws-sdk/client-s3'
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client } from "@aws-sdk/client-s3";
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlane } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlane } from "@fortawesome/free-solid-svg-icons";
 
-import heic2any from 'heic2any';
+import heic2any from "heic2any";
 
-import exifr from 'exifr';
-
+import exifr from "exifr";
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -53,21 +52,21 @@ export default function App() {
   //     });
   // }, []);
 
-  async function getSignedUrlForFile(fileName, action = 'putObject') {
+  async function getSignedUrlForFile(fileName, action = "putObject") {
     try {
       // console.log("fileName: ", fileName);
       const r2 = new S3Client({
-        region: 'auto',
+        region: "auto",
         endpoint: `https://${process.env.REACT_APP_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
         credentials: {
           accessKeyId: process.env.REACT_APP_R2_ACCESS_KEY_ID,
           secretAccessKey: process.env.REACT_APP_R2_SECRET_ACCESS_KEY,
         },
-      })
+      });
       // console.log("process.env.REACT_APP_R2_BUCKET_NAME: ", process.env.REACT_APP_R2_BUCKET_NAME);
 
-      let signedUrl = '';
-      if (action === 'putObject') {
+      let signedUrl = "";
+      if (action === "putObject") {
         signedUrl = await getSignedUrl(
           r2,
           new PutObjectCommand({
@@ -77,8 +76,7 @@ export default function App() {
           { expiresIn: 60 }
         );
         // console.log("Success generating upload URL: ", signedUrl);
-      }
-      else if (action === 'getObject') {
+      } else if (action === "getObject") {
         signedUrl = await getSignedUrl(
           r2,
           new GetObjectCommand({
@@ -91,7 +89,6 @@ export default function App() {
       }
 
       return signedUrl;
-
     } catch (error) {
       console.error("Error:", error.message);
       return error;
@@ -102,7 +99,8 @@ export default function App() {
     try {
       const options = {
         headers: {
-          'Content-Type': mimeType || fileOrBlob.type || 'application/octet-stream',  // Use provided mimeType, or fileOrBlob's type, or default to 'application/octet-stream'
+          "Content-Type":
+            mimeType || fileOrBlob.type || "application/octet-stream", // Use provided mimeType, or fileOrBlob's type, or default to 'application/octet-stream'
         },
       };
       const result = await axios.put(signedUrl, fileOrBlob, options);
@@ -116,7 +114,7 @@ export default function App() {
 
   async function downloadFile(signedUrl) {
     try {
-      const response = await axios.get(signedUrl, { responseType: 'blob' });
+      const response = await axios.get(signedUrl, { responseType: "blob" });
       console.log("download status: ", response.status);
       console.log("download result: ", response);
       console.log(typeof response.data);
@@ -144,9 +142,6 @@ export default function App() {
   //     return blob;
   // }
 
-
-
-
   // async function checkExifData(image) {
   //   EXIF.getData(image, function () {
   //     const allMetaData = EXIF.getAllTags(this);
@@ -157,7 +152,6 @@ export default function App() {
   //     }
   //   });
   // }
-
 
   // async function extractExifDataFromBlob(blob) {
   //   return new Promise((resolve, reject) => {
@@ -205,29 +199,27 @@ export default function App() {
   //     reader.readAsArrayBuffer(file);
   // }
 
-
-
-  const onChange = e => {
+  const onChange = (e) => {
     const files = Array.from(e.target.files);
-    const types = ['image/png', 'image/jpeg', 'image/heic'];
+    const types = ["image/png", "image/jpeg", "image/heic"];
 
     if (files.length > 1) {
-      toast.error('Only 1 image can currently be uploaded at a time');
+      toast.error("Only 1 image can currently be uploaded at a time");
     }
 
     files.forEach(async (file) => {
       let exifData = null;
       let mimeType = file.type;
-      let fileExtension = file.name.split('.').pop();
+      let fileExtension = file.name.split(".").pop();
 
       const exif = await exifr.parse(file);
       if (exif) {
-        const exifDateTimeStr = exif.DateTimeOriginal || exif.DateTimeDigitized || exif.CreateDate; // Example ISO string format
+        const exifDateTimeStr =
+          exif.DateTimeOriginal || exif.DateTimeDigitized || exif.CreateDate; // Example ISO string format
         const dateObj = new Date(exifDateTimeStr);
         const unixTimestamp = Math.floor(dateObj.getTime() / 1000);
         // console.log(unixTimestamp);
 
-        
         exifData = {
           Camera: exif.Make + " " + exif.Model, // Combining the Make and Model to get the Camera name
           DigitalZoomRatio: exif.DigitalZoomRatio,
@@ -244,7 +236,7 @@ export default function App() {
           GPSSpeed: exif.GPSSpeed,
           GPSSpeedRef: exif.GPSSpeedRef,
           ExposureTime: exif.ExposureTime,
-          ShutterSpeedValue: exif.ShutterSpeedValue
+          ShutterSpeedValue: exif.ShutterSpeedValue,
         };
 
         // console.log(exifData);
@@ -252,13 +244,11 @@ export default function App() {
         console.error("No EXIF data found.");
       }
 
-      
-
-      if (file.type == '') {
-        toast.error(`Unknown file type`)
+      if (file.type == "") {
+        toast.error(`Unknown file type`);
         return;
       }
-      if (types.every(type => file.type !== type)) {
+      if (types.every((type) => file.type !== type)) {
         toast.error(`'${file.type}' is not a supported format`);
         return;
       }
@@ -270,59 +260,73 @@ export default function App() {
       setUploading(true);
 
       let convertedBlob = null;
-      if (file.type === 'image/heic') {
-        toast.info('Converting image to jpeg...', { autoClose: 3000 });
+      if (file.type === "image/heic") {
+        toast.info("Converting image to jpeg...", { autoClose: 3000 });
         convertedBlob = await heic2any({
           blob: file,
-          toType: 'image/jpeg',
-          quality: 1.0
+          toType: "image/jpeg",
+          quality: 1.0,
         });
-        mimeType = 'image/jpeg';
-        fileExtension = '.jpg';
+        mimeType = "image/jpeg";
+        fileExtension = ".jpg";
       } else {
-        convertedBlob = file
+        convertedBlob = file;
       }
 
       const generatedUUID = uuidv4();
       // const fileExtension = file.name.split('.').pop();
       const newFileName = `${generatedUUID}${fileExtension}`;
 
-      toast.info('Uploading image...', { autoClose: 2000 });
-      let signedUrl = await getSignedUrlForFile(newFileName, 'putObject');
-      let uploadStatus = await uploadFile(convertedBlob, signedUrl, 'image/jpeg');
-      signedUrl = await getSignedUrlForFile(newFileName, 'getObject');
+      toast.info("Uploading image...", { autoClose: 2000 });
+      let signedUrl = await getSignedUrlForFile(newFileName, "putObject");
+      let uploadStatus = await uploadFile(
+        convertedBlob,
+        signedUrl,
+        "image/jpeg"
+      );
+      signedUrl = await getSignedUrlForFile(newFileName, "getObject");
 
-
-      setImages(prevImages => [...prevImages, signedUrl]);
+      setImages((prevImages) => [...prevImages, signedUrl]);
       setUploading(false);
 
       const dataToSave = {
         fileName: newFileName,
+        bucket: process.env.REACT_APP_R2_BUCKET_NAME,
         mimeType: mimeType,
-        exifData: exifData
+        exifData: exifData,
       };
       console.log("dataToSave: ", dataToSave);
 
-      const result = await axios.get("/upload");
-      // console.log("upload status: ", result.status);
-      // console.log("upload data: ", result.data);
-      console.log("d1 result: ", result);
+      try {
+        const options = {
+          headers: {
+            "Content-Type": "json"
+          },
+        };
+        const result = await axios.put("/write_to_r1", dataToSave, options);
+        console.log("write_to_r1 status: ", result.status);
+        console.log("write_to_r1 data: ", result.data);
+        return result.status;
+      } catch (error) {
+        console.error("Error:", error.message);
+      }
 
-
+      // const result = await axios.get("/upload");
+      // // console.log("upload status: ", result.status);
+      // // console.log("upload data: ", result.data);
+      // console.log("d1 result: ", result);
     });
-
   };
 
-  const removeImage = id => {
-    setImages(prevImages => prevImages.filter(image => image !== id));
+  const removeImage = (id) => {
+    setImages((prevImages) => prevImages.filter((image) => image !== id));
   };
-
 
   const getFOVPolygon = () => {
     return [
       mapPosition,
       [mapPosition[0] + 0.01, mapPosition[1] + 0.01],
-      [mapPosition[0] - 0.01, mapPosition[1] + 0.01]
+      [mapPosition[0] - 0.01, mapPosition[1] + 0.01],
     ];
   };
 
@@ -331,14 +335,12 @@ export default function App() {
   //   iconSize: [32, 32],
   // });
 
-  const planeIcon = () => (
-    <FontAwesomeIcon icon={faPlane} />
-  );
+  const planeIcon = () => <FontAwesomeIcon icon={faPlane} />;
 
   const onImagesError = (image) => {
     removeImage(image);
     toast.error("Failed to load the image.");
-  }
+  };
 
   const content = () => {
     switch (true) {
@@ -358,7 +360,11 @@ export default function App() {
         return (
           <div>
             <UploadButton onChange={onChange} />
-            <MapContainer center={mapPosition} zoom={13} scrollWheelZoom={false}>
+            <MapContainer
+              center={mapPosition}
+              zoom={13}
+              scrollWheelZoom={false}
+            >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -377,26 +383,38 @@ export default function App() {
     }
   };
 
-
   return (
-    <div className='container'>
-      <header className='header'>
-        <div className='logo'>SkyCheck</div>
-        <nav className='menu'>
+    <div className="container">
+      <header className="header">
+        <div className="logo">SkyCheck</div>
+        <nav className="menu">
           <ul>
-            <li><a href='#'>About</a></li>
-            <li><a href='#'>Contact</a></li>
-            <li><a href='https://www.zeffy.com/en-US/donation-form/01e7c013-796a-4574-b8b3-3c8c96a6cefd' target="_blank" rel="noopener noreferrer">Donate</a></li>
+            <li>
+              <a href="#">About</a>
+            </li>
+            <li>
+              <a href="#">Contact</a>
+            </li>
+            <li>
+              <a
+                href="https://www.zeffy.com/en-US/donation-form/01e7c013-796a-4574-b8b3-3c8c96a6cefd"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Donate
+              </a>
+            </li>
           </ul>
         </nav>
       </header>
       <ToastContainer />
-      <div className='other-text'>
-        Check the sky for aircraft and other objects. Upload original photos that contain GPS data and we will analyze them for you.
+      <div className="other-text">
+        Check the sky for aircraft and other objects. Upload original photos
+        that contain GPS data and we will analyze them for you.
       </div>
 
       {/* <UploadButton onChange={onChange} /> */}
-      <div className='buttons'>{content()}</div>
+      <div className="buttons">{content()}</div>
 
       <Footer />
     </div>
