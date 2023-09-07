@@ -1,5 +1,5 @@
 export const onRequestPost = async ({ request }) => {
-    return new Response("Hello, world!");
+    return new Response(JSON.stringify({ request }));
 //   // const { slug } = c.req.param()
 //   const dataToSave = await request.json();
 
