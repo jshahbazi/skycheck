@@ -297,7 +297,7 @@ export default function App() {
       };
       console.log("dataToSave: ", dataToSave);
 
-      const { success } = await env.SKYCHECK_DB.prepare(
+      const { success } = await process.env.SKYCHECK_DB.prepare(
         `
         insert into images (bucket, path, mimetype, timestamp, camera, shutterspeedvalue, camerabearing, digitalzoomratio, exposuretime, focallength, 
                             focallength35mm, gpsaltitude, gpshpositioningerror, gpsspeed, gpsspeedref, latitude, longitude, pixelheight, pixelwidth) values 
