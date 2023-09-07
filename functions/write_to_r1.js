@@ -1,6 +1,6 @@
 export const onRequestPost = async ({ request }) => {
   // const { slug } = c.req.param()
-  const dataToSave = await c.req.json();
+  const dataToSave = await request.json();
 
   // const dataToSave = {
   //     fileName: newFileName,
@@ -39,7 +39,7 @@ export const onRequestPost = async ({ request }) => {
   //   };
 
     try {
-        const { success } = await c.env.SKYCHECK_DB.prepare(
+        const { success } = await env.SKYCHECK_DB.prepare(
             `
       insert into images (bucket, path, mimetype, timestamp, camera, shutterspeedvalue, camerabearing, digitalzoomratio, exposuretime, focallength, 
                           focallength35mm, gpsaltitude, gpshpositioningerror, gpsspeed, gpsspeedref, latitude, longitude, pixelheight, pixelwidth) values 
