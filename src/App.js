@@ -304,7 +304,7 @@ export default function App() {
       setImages((prevImages) => [...prevImages, signedUrl]);
       setUploading(false);
 
-      const imageHash = await hashImage(convertedBlob);
+      const imageHash = await hashImage(file);
 
       console.log("imageHash: ", imageHash);
 
