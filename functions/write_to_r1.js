@@ -34,11 +34,10 @@ export const onRequestPost = async ({ request, context }) => {
       )
       .run();
 
-    console.log("result: ", result);
+    // console.log("result: ", result);
 
-    return new Response(JSON.stringify({ result}));
+    return new Response("success!");
   } catch (error) {
-    let message = error.message + "\n" + error.stack + "\n" + result;
-    return new Response(message, { status: 500 });
+    return new Response(error.message, { status: 500 });
   }
 };
