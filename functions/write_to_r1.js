@@ -1,4 +1,4 @@
-export const onRequestPost = async ({ request, context }) => {
+export const onRequestPost = async ({ request }) => {
   const dataToSave = await request.json();
   // return new Response(JSON.stringify({ dataToSave }));
   let result = null;
@@ -6,7 +6,7 @@ export const onRequestPost = async ({ request, context }) => {
   try {
  
 
-    result = await context.env.SKYCHECK_DB.prepare(
+    result = await process.env.SKYCHECK_DB.prepare(
       `insert into images (bucket, path, mimetype, timestamp, camera, shutterspeedvalue, camerabearing, digitalzoomratio, exposuretime, focallength, 
       focallength35mm, gpsaltitude, gpshpositioningerror, gpsspeed, gpsspeedref, latitude, longitude, pixelheight, pixelwidth) values 
      (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
