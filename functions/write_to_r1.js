@@ -3,14 +3,14 @@ export const onRequestPost = async ({ request, env, ctx }) => {
 
   let result = null;
   result = await env.SKYCHECK_DB.prepare(
-    `insert into images (hash, bucket, filelocation, mimetype, timestamp, camera, shutterspeedvalue, camerabearing, digitalzoomratio, exposuretime, focallength, 
+    `insert into images (hash, filelocation, bucket, mimetype, timestamp, camera, shutterspeedvalue, camerabearing, digitalzoomratio, exposuretime, focallength, 
       focallength35mm, gpsaltitude, gpshpositioningerror, gpsspeed, gpsspeedref, latitude, longitude, pixelheight, pixelwidth) values 
      (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
       dataToSave.imageHash,
-      dataToSave.bucket,
       dataToSave.fileLocation,
+      dataToSave.bucket,      
       dataToSave.mimeType,
       dataToSave.exifData.Timestamp,
       dataToSave.exifData.Camera,
