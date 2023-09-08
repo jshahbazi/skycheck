@@ -1,14 +1,16 @@
 export const onRequestPost = async ({ request, env, ctx }) => {
   const dataToSave = await request.json();
 
-  const result = await env.SKYCHECK_DB.prepare(
-    `insert into images (bucket, path, mimetype, timestamp, camera, shutterspeedvalue, camerabearing, digitalzoomratio, exposuretime, focallength, 
+  let result = null;
+  result = await env.SKYCHECK_DB.prepare(
+    `insert into images (hash, bucket, filelocation, mimetype, timestamp, camera, shutterspeedvalue, camerabearing, digitalzoomratio, exposuretime, focallength, 
       focallength35mm, gpsaltitude, gpshpositioningerror, gpsspeed, gpsspeedref, latitude, longitude, pixelheight, pixelwidth) values 
      (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
+      dataToSave.imageHash,
       dataToSave.bucket,
-      dataToSave.fileName,
+      dataToSave.fileLocation,
       dataToSave.mimeType,
       dataToSave.exifData.Timestamp,
       dataToSave.exifData.Camera,
@@ -28,6 +30,10 @@ export const onRequestPost = async ({ request, env, ctx }) => {
       dataToSave.exifData.PixelWidth
     )
     .run();
-
-  return new Response(JSON.stringify({ result }));
+  if (result.changes !== 1) {
+    return new Response(`Failed to insert image ${dataToSave.imageHash} into database`);
+  }
+  else {
+    return new Response(JSON.stringify({ result }));
+  }
 };

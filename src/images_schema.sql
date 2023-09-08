@@ -1,8 +1,8 @@
 drop table if exists images;
 create table images (
-  id integer primary key autoincrement,
+  hash text primary key,
+  filelocation text not null,
   bucket text not null,
-  path text not null,
   mimetype text not null,
   timestamp integer not null,
   camera text,
@@ -21,6 +21,3 @@ create table images (
   pixelheight integer,
   pixelwidth integer
 );
-create index idx_images_path on images (path);
-
-
