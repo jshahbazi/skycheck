@@ -297,46 +297,14 @@ export default function App() {
       };
       console.log("dataToSave: ", dataToSave);
 
-      const { success } = await process.env.SKYCHECK_DB.prepare(`insert into images (bucket, path, mimetype, timestamp, camera, shutterspeedvalue, camerabearing, digitalzoomratio, exposuretime, focallength, 
-                            focallength35mm, gpsaltitude, gpshpositioningerror, gpsspeed, gpsspeedref, latitude, longitude, pixelheight, pixelwidth) values 
-                           (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      )
-        .bind(
-          dataToSave.bucket,
-          dataToSave.fileName,
-          dataToSave.mimeType,
-          dataToSave.exifData.Timestamp,
-          dataToSave.exifData.Camera,
-          dataToSave.exifData.ShutterSpeedValue,
-          dataToSave.exifData.CameraBearing,
-          dataToSave.exifData.DigitalZoomRatio,
-          dataToSave.exifData.ExposureTime,
-          dataToSave.exifData.FocalLength,
-          dataToSave.exifData.FocalLength35mm,
-          dataToSave.exifData.GPSAltitude,
-          dataToSave.exifData.GPSHPositioningError,
-          dataToSave.exifData.GPSSpeed,
-          dataToSave.exifData.GPSSpeedRef,
-          dataToSave.exifData.Latitude,
-          dataToSave.exifData.Longitude,
-          dataToSave.exifData.PixelHeight,
-          dataToSave.exifData.PixelWidth
-        )
-        .run();
-      
-      console.log("success: ", success);
-
       try {
-        // const options = {
-        //   headers: {
-        //     "Content-Type": "json"
-        //   },
-        // };
-        const result = await axios.post("/write_to_r1", dataToSave, {
+        const options = {
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "application/json"
           },
-        });
+        };
+        const result = await axios.post("/write_to_r1", dataToSave, options);
+        console.log("write_to_r1 result: ", result);
         console.log("write_to_r1 status: ", result.status);
         console.log("write_to_r1 data: ", result.data);
         return result.status;

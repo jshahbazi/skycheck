@@ -1,77 +1,43 @@
-export const onRequestPost = async ({ request }) => {
+export const onRequestPost = async ({ request, context }) => {
   const dataToSave = await request.json();
   // return new Response(JSON.stringify({ dataToSave }));
-  //   // const { slug } = c.req.param()
-  //   const dataToSave = await request.json();
-
-  //   // const dataToSave = {
-  //   //     fileName: newFileName,
-  //   //     mimeType: mimeType,
-  //   //     exifData: exifData
-  //   //   };
-
-  //   // if (!author) return c.text("Missing author value for new comment")
-  //   // if (!body) return c.text("Missing body value for new comment")
-
-  //   // bucket text not null,
-  //   // path text not null,
-  //   // mimetype text not null,
-  //   // timestamp integer not null,
-  //   // camera text,
-  //   // shutterspeedvalue real,
-  //   // camerabearing real,
-  //   // digitalzoomratio real,
-  //   // exposuretime real,
-  //   // focallength real,
-  //   // focallength35mm real,
-  //   // gpsaltitude real,
-  //   // gpshpositioningerror real,
-  //   // gpsspeed real,
-  //   // gpsspeedref text,
-  //   // latitude real,
-  //   // longitude real,
-  //   // pixelheight integer,
-  //   // pixelwidth integer
-
-  //   // const dataToSave = {
-  //   //     fileName: newFileName,
-  //   //     bucket: process.env.REACT_APP_R2_BUCKET_NAME,
-  //   //     mimeType: mimeType,
-  //   //     exifData: exifData
-  //   //   };
 
   try {
-    const { success } = await env.SKYCHECK_DB.prepare(
-      `
-      insert into images (bucket, path, mimetype, timestamp, camera, shutterspeedvalue, camerabearing, digitalzoomratio, exposuretime, focallength, 
-                          focallength35mm, gpsaltitude, gpshpositioningerror, gpsspeed, gpsspeedref, latitude, longitude, pixelheight, pixelwidth) values 
-                         (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
+ 
+
+    const { success } = await context.env.SKYCHECK_DB.prepare(
+      `insert into images (bucket, path, mimetype, timestamp, camera, shutterspeedvalue, camerabearing, digitalzoomratio, exposuretime, focallength, 
+      focallength35mm, gpsaltitude, gpshpositioningerror, gpsspeed, gpsspeedref, latitude, longitude, pixelheight, pixelwidth) values 
+     (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
       .bind(
         dataToSave.bucket,
         dataToSave.fileName,
-        dataToSave.mimetype,
-        dataToSave.exifData.timestamp,
-        dataToSave.exifData.camera,
-        dataToSave.exifData.shutterspeedvalue,
-        dataToSave.exifData.camerabearing,
-        dataToSave.exifData.digitalzoomratio,
-        dataToSave.exifData.exposuretime,
-        dataToSave.exifData.focallength,
-        dataToSave.exifData.focallength35mm,
-        dataToSave.exifData.gpsaltitude,
-        dataToSave.exifData.gpshpositioningerror,
-        dataToSave.exifData.gpsspeed,
-        dataToSave.exifData.gpsspeedref,
-        dataToSave.exifData.latitude,
-        dataToSave.exifData.longitude,
-        dataToSave.exifData.pixelheight,
-        dataToSave.exifData.pixelwidth
+        dataToSave.mimeType,
+        dataToSave.exifData.Timestamp,
+        dataToSave.exifData.Camera,
+        dataToSave.exifData.ShutterSpeedValue,
+        dataToSave.exifData.CameraBearing,
+        dataToSave.exifData.DigitalZoomRatio,
+        dataToSave.exifData.ExposureTime,
+        dataToSave.exifData.FocalLength,
+        dataToSave.exifData.FocalLength35mm,
+        dataToSave.exifData.GPSAltitude,
+        dataToSave.exifData.GPSHPositioningError,
+        dataToSave.exifData.GPSSpeed,
+        dataToSave.exifData.GPSSpeedRef,
+        dataToSave.exifData.Latitude,
+        dataToSave.exifData.Longitude,
+        dataToSave.exifData.PixelHeight,
+        dataToSave.exifData.PixelWidth
       )
       .run();
+
+    // console.log("success: ", success);
+
     return new Response(JSON.stringify({ success }));
   } catch (error) {
-    return new Response(error.message, { status: 500 });
+    let message = error.message + "\n" + error.stack + "\n" + success;
+    return new Response(message, { status: 500 });
   }
 };
