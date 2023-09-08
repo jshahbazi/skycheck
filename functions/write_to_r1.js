@@ -3,7 +3,7 @@ export const onRequestPost = async ({ request, env, ctx }) => {
   // return new Response(JSON.stringify({ dataToSave }));
   let result = null;
 
-  try {
+  // try {
  
 
     result = await env.SKYCHECK_DB.prepare(
@@ -37,7 +37,7 @@ export const onRequestPost = async ({ request, env, ctx }) => {
     // console.log("result: ", result);
 
     return new Response("success!");
-  } catch (error) {
-    return new Response(error.message, { status: 500 });
-  }
+  // } catch (error) {
+  //   return new Response(error.message, { status: 500 });
+  // }
 };
