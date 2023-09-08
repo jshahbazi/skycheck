@@ -309,11 +309,11 @@ export default function App() {
       console.log("imageHash: ", imageHash);
 
       const dataToSave = {
-        fileLocation: process.env.REACT_APP_R2_BUCKET_NAME + "/" + newFileName,
+        imageHash: imageHash,
+        fileLocation: newFileName,
         bucket: process.env.REACT_APP_R2_BUCKET_NAME,
         mimeType: mimeType,
-        exifData: exifData,
-        imageHash: imageHash,
+        exifData: exifData
       };
       console.log("dataToSave: ", dataToSave);
 
