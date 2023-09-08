@@ -30,8 +30,11 @@ export const onRequestPost = async ({ request, env, ctx }) => {
       dataToSave.exifData.PixelWidth
     )
     .run();
+  
+  
   if (result.changes !== 1) {
-    return new Response(`Failed to insert image ${dataToSave.imageHash} into database`);
+    // return new Response(`Failed to insert image ${dataToSave.imageHash} into database`);
+    return Response(JSON.stringify({ result }));
   }
   else {
     return new Response(JSON.stringify({ result }));
