@@ -198,6 +198,21 @@ export default function App() {
 
   //     reader.readAsArrayBuffer(file);
   // }
+  async function hashImage(file) {
+    // Step 1: Read the file as an ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer();
+  
+    // Step 2: Hash the ArrayBuffer
+    const crypto = window.crypto;
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+  
+    // Step 3: Convert the hash to a hexadecimal string
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    return hashHex;
+  }
+
 
   const onChange = (e) => {
     const files = Array.from(e.target.files);
@@ -289,11 +304,16 @@ export default function App() {
       setImages((prevImages) => [...prevImages, signedUrl]);
       setUploading(false);
 
+      const imageHash = await hashImage(convertedBlob);
+
+      console.log("imageHash: ", imageHash);
+
       const dataToSave = {
         fileName: newFileName,
         bucket: process.env.REACT_APP_R2_BUCKET_NAME,
         mimeType: mimeType,
         exifData: exifData,
+        imageHash: imageHash,
       };
       console.log("dataToSave: ", dataToSave);
 
