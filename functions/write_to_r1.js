@@ -1,11 +1,11 @@
-export const onRequestPost = async ({ request }) => {
+export const onRequestPost = async ({ request, context }) => {
   const dataToSave = await request.json();
   // return new Response(JSON.stringify({ dataToSave }));
 
   try {
  
 
-    const { success } = await env.SKYCHECK_DB.prepare(
+    const success = await context.env.SKYCHECK_DB.prepare(
       `insert into images (bucket, path, mimetype, timestamp, camera, shutterspeedvalue, camerabearing, digitalzoomratio, exposuretime, focallength, 
       focallength35mm, gpsaltitude, gpshpositioningerror, gpsspeed, gpsspeedref, latitude, longitude, pixelheight, pixelwidth) values 
      (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
@@ -38,6 +38,6 @@ export const onRequestPost = async ({ request }) => {
     return new Response(JSON.stringify({ success }));
   } catch (error) {
     let message = error.message + "\n" + error.stack + "\n" + success;
-    return new Response(message, { status: 500 });
+    return new Response(error.message, { status: 500 });
   }
 };
