@@ -310,7 +310,7 @@ export default function App() {
 
       const dataToSave = {
         imageHash: imageHash,
-        fileLocation: newFileName,
+        fileLocation: process.env.REACT_APP_R2_BUCKET_NAME + "/" + newFileName,
         bucket: process.env.REACT_APP_R2_BUCKET_NAME,
         mimeType: mimeType,
         exifData: exifData
