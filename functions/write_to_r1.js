@@ -43,7 +43,7 @@ export const onRequestPost = async ({ request, env, ctx }) => {
     // console.log("done inserting")
     // const result = await stmt.all();
     // console.log("result: ", result)
-    console.log("result1: ", result)
+    console.log("result1: ", JSON.stringify(result));
     return new Response(result, { status: 200 });
       // if (success) {
       //   return new Response(dataToSave.fileLocation, { status: 200 });
@@ -56,7 +56,7 @@ export const onRequestPost = async ({ request, env, ctx }) => {
     if (e.message.includes("UNIQUE constraint failed")) {
       const result = await env.SKYCHECK_DB.prepare("SELECT file_location FROM images WHERE hash = ?").bind(dataToSave.imageHash);
       // const { results } = await stmt.all();
-      console.log("result2: ", result)
+      console.log("result2: ", JSON.stringify(result));
       return new Response(result.file_location, { status: 200 });
     } else {
       return new Response(e.message, { status: 200 });
