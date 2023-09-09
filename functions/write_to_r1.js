@@ -41,12 +41,13 @@ export const onRequestPost = async ({ request, env, ctx }) => {
       )
       .run();
     
-      const { success } = await stmt.all();
-      if (success) {
-        return new Response(dataToSave.fileLocation, { status: 200 });
-      } else {
-        return new Response(`Failed to insert image ${dataToSave.imageHash} into database`, { status: 500 });
-      }
+    const result = await stmt.all();
+    return new Response(result, { status: 200 });
+      // if (success) {
+      //   return new Response(dataToSave.fileLocation, { status: 200 });
+      // } else {
+      //   return new Response(`Failed to insert image ${dataToSave.imageHash} into database`, { status: 500 });
+      // }
 
   } catch (e) {
     // Error: "D1_ERROR: Error: UNIQUE constraint failed: images.hash"
