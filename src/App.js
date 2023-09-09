@@ -284,20 +284,20 @@ export default function App() {
   
 
   async function convertHEICToAny(file, toType, quality) {
-    let convertedBlob = null;
+    let mimeType = toType;
+    let fileExtension = getExtensionFromMimeType(toType);
+    
     if (file.type === "image/heic") {
       toast.info("Converting image to jpeg...", { autoClose: 3000 });
-      convertedBlob = await heic2any({
+      const convertedFile = await heic2any({
         blob: file,
         toType: toType,
         quality: quality,
       });
-      let mimeType = toType;
-      let fileExtension = getExtensionFromMimeType(toType);
-      return { convertedBlob, mimeType, fileExtension };
+      return { convertedFile, mimeType, fileExtension };
     } else {
-      convertedBlob = file;
-      return { convertedBlob, mimeType: file.type, fileExtension: getExtensionFromMimeType(file.type) };
+      const convertedFile = file;
+      return { convertedFile, mimeType, fileExtension };
     }    
 
 
@@ -377,6 +377,7 @@ export default function App() {
       if (action === "add") {
         toast.info("Uploading image...", { autoClose: 2000 });
         try {
+          console.log("filePath: ", filePath);
           let signedUrl = await uploadImage(convertedFile, bucket, filePath);
           console.log("signedUrl: ", signedUrl);
           setUploading(false);
@@ -388,6 +389,7 @@ export default function App() {
           return;
         }
       } else if (action === "retrieve") {
+        console.log("filePath: ", filePath);
         toast.info("Image already exists. Retrieving...", { autoClose: 2000 });
         let signedUrl = await getSignedUrlForFile(filePath, bucket, "getObject");
         console.log("signedUrl: ", signedUrl);
