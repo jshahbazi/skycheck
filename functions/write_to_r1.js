@@ -77,9 +77,13 @@ export const onRequestPost = async ({ request, env, ctx }) => {
   } catch (e) {
     // Error: "D1_ERROR: Error: UNIQUE constraint failed: images.hash"
     if (e.message.includes("UNIQUE constraint failed")) {
-      const result = await env.SKYCHECK_DB.prepare("SELECT file_location FROM images WHERE hash = ?").bind(dataToSave.imageHash).run();
+      const d1_response = await env.SKYCHECK_DB.prepare("SELECT file_location FROM images WHERE hash = ?").bind(dataToSave.imageHash).run();
       // const { results } = await stmt.all();
-      console.log("result2: ", JSON.stringify(result));
+      console.log("result2: ", JSON.stringify(d1_response));
+      // "{\"results\":[{\"file_location\":\"skycheck-images/7b94a980-42df-4865-98ce-9d4041dd71bc.jpg\"}],\"success\":true,\"meta\":{\"served_by\":\"v3-prod\",\"duration\":0.2985970005393028,\"changes\":0,\"last_row_id\":0,\"changed_db\":false,\"size_after\":20480,\"rows_read\":1,\"rows_written\":0}}"
+      console.log("result2.results: ", JSON.stringify(d1_response.results.file_location));
+      // d1_response.meta.rows_read
+      console.log("result2.meta.rows_read: ", JSON.stringify(d1_response.meta.rows_read));
       // {
       //   results: [
       //     {
@@ -99,10 +103,10 @@ export const onRequestPost = async ({ request, env, ctx }) => {
       //   }
       // }
       let response = null;
-      if (result.meta.rows_read === 0) {
-        response = new Response(`Failed to get file_location for ${dataToSave.imageHash}: ` + JSON.stringify(result), { status: 500 });
+      if (d1_response.meta.rows_read === 0) {
+        response = new Response(`Failed to get file_location for ${dataToSave.imageHash}: ` + JSON.stringify(d1_response), { status: 500 });
       } else {
-        response = new Response(result.results.file_location, { status: 200 });
+        response = new Response(d1_response.results.file_location, { status: 200 });
       }
       return response;      
     } else {
@@ -110,10 +114,10 @@ export const onRequestPost = async ({ request, env, ctx }) => {
     }
   }
 
-  if (result.changes !== 1) {
-    // return new Response(`Failed to insert image ${dataToSave.imageHash} into database`);
-    return Response(JSON.stringify({ result }));
-  } else {
-    return new Response(JSON.stringify({ result }));
-  }
+  // if (result.changes !== 1) {
+  //   // return new Response(`Failed to insert image ${dataToSave.imageHash} into database`);
+  //   return Response(JSON.stringify({ result }));
+  // } else {
+  //   return new Response(JSON.stringify({ result }));
+  // }
 };
