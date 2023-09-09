@@ -378,8 +378,9 @@ export default function App() {
         toast.info("Uploading image...", { autoClose: 2000 });
         try {
           let signedUrl = await uploadImage(convertedFile, bucket, filePath);
-          setImages((prevImages) => [...prevImages, signedUrl]);
+          console.log("signedUrl: ", signedUrl);
           setUploading(false);
+          setImages((prevImages) => [...prevImages, signedUrl]);
         } catch (error) {
           toast.info("Error uploading image...", { autoClose: 2000 });
           console.error(error.message);
@@ -389,6 +390,8 @@ export default function App() {
       } else if (action === "retrieve") {
         toast.info("Image already exists. Retrieving...", { autoClose: 2000 });
         let signedUrl = await getSignedUrlForFile(filePath, bucket, "getObject");
+        console.log("signedUrl: ", signedUrl);
+        setUploading(false);        
         setImages((prevImages) => [...prevImages, signedUrl]);
         return;
       }
