@@ -78,12 +78,13 @@ export const onRequestPost = async ({ request, env, ctx }) => {
     // Error: "D1_ERROR: Error: UNIQUE constraint failed: images.hash"
     if (e.message.includes("UNIQUE constraint failed")) {
       const d1_response = await env.SKYCHECK_DB.prepare("SELECT file_location FROM images WHERE hash = ?").bind(dataToSave.imageHash).run();
-      // const { results } = await stmt.all();
-      console.log("result2: ", JSON.stringify(d1_response));
-      // "{\"results\":[{\"file_location\":\"skycheck-images/7b94a980-42df-4865-98ce-9d4041dd71bc.jpg\"}],\"success\":true,\"meta\":{\"served_by\":\"v3-prod\",\"duration\":0.2985970005393028,\"changes\":0,\"last_row_id\":0,\"changed_db\":false,\"size_after\":20480,\"rows_read\":1,\"rows_written\":0}}"
-      console.log("result2.results: ", JSON.stringify(d1_response.results.file_location));
-      // d1_response.meta.rows_read
-      console.log("result2.meta.rows_read: ", JSON.stringify(d1_response.meta.rows_read));
+      const file_location = d1_response.results[0].file_location;
+
+      // console.log("result2: ", JSON.stringify(d1_response));
+      // // "{\"results\":[{\"file_location\":\"skycheck-images/7b94a980-42df-4865-98ce-9d4041dd71bc.jpg\"}],\"success\":true,\"meta\":{\"served_by\":\"v3-prod\",\"duration\":0.2985970005393028,\"changes\":0,\"last_row_id\":0,\"changed_db\":false,\"size_after\":20480,\"rows_read\":1,\"rows_written\":0}}"
+      // console.log("result2.results: ", JSON.stringify(d1_response.results[0].file_location));
+      // // d1_response.meta.rows_read
+      // console.log("result2.meta.rows_read: ", JSON.stringify(d1_response.meta.rows_read));
       // {
       //   results: [
       //     {
@@ -106,7 +107,7 @@ export const onRequestPost = async ({ request, env, ctx }) => {
       if (d1_response.meta.rows_read === 0) {
         response = new Response(`Failed to get file_location for ${dataToSave.imageHash}: ` + JSON.stringify(d1_response), { status: 500 });
       } else {
-        response = new Response(d1_response.results.file_location, { status: 200 });
+        response = new Response(file_location, { status: 200 });
       }
       return response;      
     } else {
