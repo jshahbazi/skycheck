@@ -41,10 +41,33 @@ export const onRequestPost = async ({ request, env, ctx }) => {
       )
       .run();
     
-    
+      // {
+      //   results: [],
+      //   success: true,
+      //   meta: {
+      //     served_by: 'v3-prod',
+      //     duration: 0.23815499991178513,
+      //     changes: 1,
+      //     last_row_id: 2,
+      //     changed_db: true,
+      //     size_after: 20480,
+      //     rows_read: 0,
+      //     rows_written: 2
+      //   }
+      // }
     
     console.log("result1: ", JSON.stringify(result));
-    return new Response(result, { status: 200 });
+
+    let response = null;
+    if (result.meta.changes !== 1) {
+      response = new Response(`Failed to insert image ${dataToSave.imageHash} into database`, { status: 500 });
+    } else {
+      response = new Response(dataToSave.fileLocation, { status: 200 });
+    }
+    return response;
+
+
+
       // if (success) {
       //   return new Response(dataToSave.fileLocation, { status: 200 });
       // } else {
@@ -75,13 +98,15 @@ export const onRequestPost = async ({ request, env, ctx }) => {
       //     rows_written: 0
       //   }
       // }
-      if (result.results.length !== 1) {
-        return new Response(result.results.file_location, { status: 200 });
+      let response = null;
+      if (result.meta.rows_read === 0) {
+        response = new Response(`Failed to get file_location for ${dataToSave.imageHash}: ` + JSON.stringify(result), { status: 500 });
       } else {
-        return new Response(`Failed to get file_location for ${dataToSave.imageHash}: ` + JSON.stringify(result), { status: 500 });
+        response = new Response(result.results.file_location, { status: 200 });
       }
+      return response;      
     } else {
-      return new Response(e.message, { status: 200 });
+      return new Response(e.message, { status: 500 });
     }
   }
 
