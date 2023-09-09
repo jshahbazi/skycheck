@@ -24,6 +24,8 @@ import heic2any from "heic2any";
 
 import exifr from "exifr";
 
+const SUPPORTED_FILE_TYPES = ["image/png", "image/jpeg", "image/heic"];
+
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -52,9 +54,8 @@ export default function App() {
   //     });
   // }, []);
 
-  async function getSignedUrlForFile(fileName, action = "putObject") {
+  async function getSignedUrlForFile(key, bucket, action = "putObject") {
     try {
-      // console.log("fileName: ", fileName);
       const r2 = new S3Client({
         region: "auto",
         endpoint: `https://${process.env.REACT_APP_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -63,29 +64,26 @@ export default function App() {
           secretAccessKey: process.env.REACT_APP_R2_SECRET_ACCESS_KEY,
         },
       });
-      // console.log("process.env.REACT_APP_R2_BUCKET_NAME: ", process.env.REACT_APP_R2_BUCKET_NAME);
 
       let signedUrl = "";
       if (action === "putObject") {
         signedUrl = await getSignedUrl(
           r2,
           new PutObjectCommand({
-            Bucket: process.env.REACT_APP_R2_BUCKET_NAME,
-            Key: fileName,
+            Bucket: bucket,
+            Key: key,
           }),
           { expiresIn: 60 }
         );
-        // console.log("Success generating upload URL: ", signedUrl);
       } else if (action === "getObject") {
         signedUrl = await getSignedUrl(
           r2,
           new GetObjectCommand({
-            Bucket: process.env.REACT_APP_R2_BUCKET_NAME,
-            Key: fileName,
+            Bucket: bucket,
+            Key: key,
           }),
           { expiresIn: 60 }
         );
-        // console.log("Success generating download URL: ", signedUrl);
       }
 
       return signedUrl;
@@ -214,123 +212,180 @@ export default function App() {
   }
 
 
+  async function extractExifData(file) {
+    // Define the supported types if it's not already defined elsewhere
+    // const types = ["image/png", "image/jpeg", "image/heic"]; // Add or remove supported types as needed
+  
+    if (file.type === "") {
+      toast.error(`Unknown file type`);
+      throw new Error('Unknown file type');
+    }
+    
+    if (SUPPORTED_FILE_TYPES.every(type => file.type !== type)) {
+      toast.error(`'${file.type}' is not a supported format`);
+      throw new Error(`'${file.type}' is not a supported format`);
+    }
+    
+    if (file.size > 150000000) {
+      toast.error(`'${file.name}' is too large, please pick a smaller file`);
+      throw new Error(`'${file.name}' is too large, please pick a smaller file`);
+    }
+  
+    const exif = await exifr.parse(file);
+    if (exif) {
+      const exifDateTimeStr =
+        exif.DateTimeOriginal || exif.DateTimeDigitized || exif.CreateDate;
+      const dateObj = new Date(exifDateTimeStr);
+      const unixTimestamp = Math.floor(dateObj.getTime() / 1000);
+  
+      const exifData = {
+        Camera: exif.Make + " " + exif.Model,
+        DigitalZoomRatio: exif.DigitalZoomRatio || 1.0,
+        Latitude: exif.latitude,
+        Longitude: exif.longitude,
+        CameraBearing: exif.GPSImgDirection,
+        PixelWidth: exif.ImageWidth || exif.ExifImageWidth,
+        PixelHeight: exif.ImageHeight || exif.ExifImageHeight,
+        FocalLength35mm: exif.FocalLengthIn35mmFormat,
+        FocalLength: exif.FocalLength,
+        Timestamp: unixTimestamp,
+        GPSAltitude: exif.GPSAltitude,
+        GPSHPositioningError: exif.GPSHPositioningError,
+        GPSSpeed: exif.GPSSpeed,
+        GPSSpeedRef: exif.GPSSpeedRef,
+        ExposureTime: exif.ExposureTime,
+        ShutterSpeedValue: exif.ShutterSpeedValue,
+      };
+  
+      return exifData;
+    } else {
+      toast.error("No EXIF data found.");
+      throw new Error('No EXIF data found.');
+    }
+  }
+
+  function getExtensionFromMimeType(mimeType) {
+    const mimeToExtension = {
+        'image/jpeg': 'jpg',
+        'image/png': 'png',
+        'image/gif': 'gif',
+        'image/webp': 'webp',
+        'image/tiff': 'tif',
+        'image/bmp': 'bmp',
+        'image/svg+xml': 'svg',
+        'audio/mpeg': 'mp3',
+        'audio/wav': 'wav',
+        'video/mp4': 'mp4',
+        'application/pdf': 'pdf',
+    };
+
+    return mimeToExtension[mimeType] || null;
+}
+  
+
+  async function convertHEICToAny(file, toType, quality) {
+    let convertedBlob = null;
+    if (file.type === "image/heic") {
+      toast.info("Converting image to jpeg...", { autoClose: 3000 });
+      convertedBlob = await heic2any({
+        blob: file,
+        toType: toType,
+        quality: quality,
+      });
+      let mimeType = toType;
+      let fileExtension = getExtensionFromMimeType(toType);
+      return { convertedBlob, mimeType, fileExtension };
+    } else {
+      convertedBlob = file;
+      return { convertedBlob, mimeType: file.type, fileExtension: getExtensionFromMimeType(file.type) };
+    }    
+
+
+  }
+
+  async function uploadImage(file, bucket, filePath) {
+    let signedUrl = await getSignedUrlForFile(filePath, bucket, "putObject");
+    let uploadStatus = await uploadFile(file, signedUrl, "image/jpeg");
+    console.log("uploadStatus: ", uploadStatus);
+    signedUrl = await getSignedUrlForFile(filePath, bucket, "getObject");
+    return signedUrl;
+  }
+
+
+  async function addOrRetrieveImage(dataToSave) {
+    const options = {
+      headers: {
+        "Content-Type": "application/json"
+      },
+    };
+    const result = await axios.post("/write_to_r1", dataToSave, options);
+    console.log("write_to_r1 result: ", result);
+    console.log("write_to_r1 status: ", result.status);
+    console.log("write_to_r1 data: ", result.data);
+    return result.status;
+  }
+
+
   const onChange = (e) => {
     const files = Array.from(e.target.files);
-    const types = ["image/png", "image/jpeg", "image/heic"];
+    // const types = ["image/png", "image/jpeg", "image/heic"];
 
     if (files.length > 1) {
       toast.error("Only 1 image can currently be uploaded at a time");
     }
 
     files.forEach(async (file) => {
-      let exifData = null;
-      let mimeType = file.type;
-      let fileExtension = file.name.split(".").pop();
-
-      const exif = await exifr.parse(file);
-      if (exif) {
-        const exifDateTimeStr =
-          exif.DateTimeOriginal || exif.DateTimeDigitized || exif.CreateDate; // Example ISO string format
-        const dateObj = new Date(exifDateTimeStr);
-        const unixTimestamp = Math.floor(dateObj.getTime() / 1000);
-        // console.log(unixTimestamp);
-
-        exifData = {
-          Camera: exif.Make + " " + exif.Model, // Combining the Make and Model to get the Camera name
-          DigitalZoomRatio: exif.DigitalZoomRatio || 1.0,
-          Latitude: exif.latitude, // exifr automatically parses GPS Latitude and Longitude into these keys for ease of use
-          Longitude: exif.longitude,
-          CameraBearing: exif.GPSImgDirection, // This key holds the direction of the camera when the photo was taken
-          PixelWidth: exif.ImageWidth || exif.ExifImageWidth,
-          PixelHeight: exif.ImageHeight || exif.ExifImageHeight,
-          FocalLength35mm: exif.FocalLengthIn35mmFormat,
-          FocalLength: exif.FocalLength,
-          Timestamp: unixTimestamp,
-          GPSAltitude: exif.GPSAltitude,
-          GPSHPositioningError: exif.GPSHPositioningError, // This might not always be present
-          GPSSpeed: exif.GPSSpeed,
-          GPSSpeedRef: exif.GPSSpeedRef,
-          ExposureTime: exif.ExposureTime,
-          ShutterSpeedValue: exif.ShutterSpeedValue,
-        };
-
-        // console.log(exifData);
-      } else {
-        console.error("No EXIF data found.");
-      }
-
-      if (file.type == "") {
-        toast.error(`Unknown file type`);
-        return;
-      }
-      if (types.every((type) => file.type !== type)) {
-        toast.error(`'${file.type}' is not a supported format`);
-        return;
-      }
-      if (file.size > 150000000) {
-        toast.error(`'${file.name}' is too large, please pick a smaller file`);
-        return;
-      }
 
       setUploading(true);
+      try {
+        const exifData = await extractExifData(file);
+        console.log(exifData);
+      } catch (error) {
+        console.error(error.message);
+        setUploading(false);
+        return;
+      }      
 
-      let convertedBlob = null;
-      if (file.type === "image/heic") {
-        toast.info("Converting image to jpeg...", { autoClose: 3000 });
-        convertedBlob = await heic2any({
-          blob: file,
-          toType: "image/jpeg",
-          quality: 1.0,
-        });
-        mimeType = "image/jpeg";
-        fileExtension = ".jpg";
-      } else {
-        convertedBlob = file;
-      }
+      let { convertedFile, mimeType, fileExtension } = await convertHEICToAny(file, "image/jpeg", 1.0);
 
+      const bucket = process.env.REACT_APP_R2_BUCKET_NAME;
       const generatedUUID = uuidv4();
-      // const fileExtension = file.name.split('.').pop();
       const newFileName = `${generatedUUID}${fileExtension}`;
-
-      toast.info("Uploading image...", { autoClose: 2000 });
-      let signedUrl = await getSignedUrlForFile(newFileName, "putObject");
-      let uploadStatus = await uploadFile(
-        convertedBlob,
-        signedUrl,
-        "image/jpeg"
-      );
-      signedUrl = await getSignedUrlForFile(newFileName, "getObject");
-
-      setImages((prevImages) => [...prevImages, signedUrl]);
-      setUploading(false);
+      const proposedFilePath = `${bucket}/${newFileName}`;
 
       const imageHash = await hashImage(file);
-
       console.log("imageHash: ", imageHash);
 
       const dataToSave = {
         imageHash: imageHash,
-        fileLocation: process.env.REACT_APP_R2_BUCKET_NAME + "/" + newFileName,
-        bucket: process.env.REACT_APP_R2_BUCKET_NAME,
+        filePath: proposedFilePath,
+        bucket: bucket,
         mimeType: mimeType,
         exifData: exifData
       };
       console.log("dataToSave: ", dataToSave);
 
-      try {
-        const options = {
-          headers: {
-            "Content-Type": "application/json"
-          },
-        };
-        const result = await axios.post("/write_to_r1", dataToSave, options);
-        console.log("write_to_r1 result: ", result);
-        console.log("write_to_r1 status: ", result.status);
-        console.log("write_to_r1 data: ", result.data);
-        return result.status;
-      } catch (error) {
-        console.error("Error:", error.message);
+      let { action, filePath } = await addOrRetrieveImage(dataToSave);
+
+      if (action === "add") {
+        toast.info("Uploading image...", { autoClose: 2000 });
+        try {
+          let signedUrl = await uploadImage(convertedFile, bucket, filePath);
+          setImages((prevImages) => [...prevImages, signedUrl]);
+          setUploading(false);
+        } catch (error) {
+          toast.info("Error uploading image...", { autoClose: 2000 });
+          console.error(error.message);
+          setUploading(false);
+          return;
+        }
+      } else if (action === "retrieve") {
+        toast.info("Image already exists. Retrieving...", { autoClose: 2000 });
+        let signedUrl = await getSignedUrlForFile(filePath, bucket, "getObject");
+        setImages((prevImages) => [...prevImages, signedUrl]);
+        return;
       }
+
 
 
     });

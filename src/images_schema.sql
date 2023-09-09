@@ -1,8 +1,8 @@
 drop table if exists images;
 create table images (
   hash text primary key,
-  file_location text not null,
-  bucket text not null,
+  bucket text not null,  
+  file_path text not null,
   mime_type text not null,
   timestamp integer not null,
   camera text,
