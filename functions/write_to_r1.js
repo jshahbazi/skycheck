@@ -63,7 +63,7 @@ export const onRequestPost = async ({ request, env, ctx }) => {
       response = new Response(`Failed to insert image ${dataToSave.imageHash} into database`, { status: 500 });
     } else {
       let responseMessage = { action: "add", path: dataToSave.filePath};
-      response = new Response(responseMessage, { status: 200 });
+      response = new Response(JSON.stringify(responseMessage), { status: 200 });
     }
     return response;
 
@@ -77,7 +77,7 @@ export const onRequestPost = async ({ request, env, ctx }) => {
         response = new Response(`Failed to get file_path for ${dataToSave.imageHash}: ` + JSON.stringify(d1_response), { status: 500 });
       } else {
         let responseMessage = { action: "retrieve", path: file_location};
-        response = new Response(responseMessage, { status: 200 });
+        response = new Response(JSON.stringify(responseMessage), { status: 200 });
       }
       return response;      
     } else {
