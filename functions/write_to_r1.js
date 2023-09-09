@@ -54,9 +54,10 @@ export const onRequestPost = async ({ request, env, ctx }) => {
   } catch (e) {
     // Error: "D1_ERROR: Error: UNIQUE constraint failed: images.hash"
     if (e.message.includes("UNIQUE constraint failed")) {
-      const result = await env.SKYCHECK_DB.prepare("SELECT file_location FROM images WHERE hash = ?").bind(dataToSave.imageHash);
+      const result = await env.SKYCHECK_DB.prepare("SELECT file_location FROM images WHERE hash = ?").bind(dataToSave.imageHash).run();
       // const { results } = await stmt.all();
       console.log("result2: ", JSON.stringify(result));
+
       return new Response(result.file_location, { status: 200 });
     } else {
       return new Response(e.message, { status: 200 });
