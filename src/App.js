@@ -199,45 +199,48 @@ export default function App() {
   async function hashImage(file) {
     // Step 1: Read the file as an ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
-  
+
     // Step 2: Hash the ArrayBuffer
     const crypto = window.crypto;
-    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
-  
+    const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
+
     // Step 3: Convert the hash to a hexadecimal string
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    
+    const hashHex = hashArray
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
     return hashHex;
   }
-
 
   async function extractExifData(file) {
     // Define the supported types if it's not already defined elsewhere
     // const types = ["image/png", "image/jpeg", "image/heic"]; // Add or remove supported types as needed
-  
+
     if (file.type === "") {
       toast.error(`Unknown file type`);
-      throw new Error('Unknown file type');
+      throw new Error("Unknown file type");
     }
-    
-    if (SUPPORTED_FILE_TYPES.every(type => file.type !== type)) {
+
+    if (SUPPORTED_FILE_TYPES.every((type) => file.type !== type)) {
       toast.error(`'${file.type}' is not a supported format`);
       throw new Error(`'${file.type}' is not a supported format`);
     }
-    
+
     if (file.size > 150000000) {
       toast.error(`'${file.name}' is too large, please pick a smaller file`);
-      throw new Error(`'${file.name}' is too large, please pick a smaller file`);
+      throw new Error(
+        `'${file.name}' is too large, please pick a smaller file`
+      );
     }
-  
+
     const exif = await exifr.parse(file);
     if (exif) {
       const exifDateTimeStr =
         exif.DateTimeOriginal || exif.DateTimeDigitized || exif.CreateDate;
       const dateObj = new Date(exifDateTimeStr);
       const unixTimestamp = Math.floor(dateObj.getTime() / 1000);
-  
+
       const exifData = {
         Camera: exif.Make + " " + exif.Model,
         DigitalZoomRatio: exif.DigitalZoomRatio || 1.0,
@@ -256,37 +259,36 @@ export default function App() {
         ExposureTime: exif.ExposureTime,
         ShutterSpeedValue: exif.ShutterSpeedValue,
       };
-  
+
       return exifData;
     } else {
       toast.error("No EXIF data found.");
-      throw new Error('No EXIF data found.');
+      throw new Error("No EXIF data found.");
     }
   }
 
   function getExtensionFromMimeType(mimeType) {
     const mimeToExtension = {
-        'image/jpeg': 'jpg',
-        'image/png': 'png',
-        'image/gif': 'gif',
-        'image/webp': 'webp',
-        'image/tiff': 'tif',
-        'image/bmp': 'bmp',
-        'image/svg+xml': 'svg',
-        'audio/mpeg': 'mp3',
-        'audio/wav': 'wav',
-        'video/mp4': 'mp4',
-        'application/pdf': 'pdf',
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/gif": "gif",
+      "image/webp": "webp",
+      "image/tiff": "tif",
+      "image/bmp": "bmp",
+      "image/svg+xml": "svg",
+      "audio/mpeg": "mp3",
+      "audio/wav": "wav",
+      "video/mp4": "mp4",
+      "application/pdf": "pdf",
     };
 
     return mimeToExtension[mimeType] || null;
-}
-  
+  }
 
   async function convertHEICToAny(file, toType, quality) {
     let mimeType = toType;
     let fileExtension = getExtensionFromMimeType(toType);
-    
+
     if (file.type === "image/heic") {
       toast.info("Converting image to jpeg...", { autoClose: 3000 });
       const convertedFile = await heic2any({
@@ -298,9 +300,7 @@ export default function App() {
     } else {
       const convertedFile = file;
       return { convertedFile, mimeType, fileExtension };
-    }    
-
-
+    }
   }
 
   async function uploadImage(file, bucket, filePath) {
@@ -311,11 +311,10 @@ export default function App() {
     return signedUrl;
   }
 
-
   async function addOrRetrieveImage(dataToSave) {
     const options = {
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
     };
     const result = await axios.post("/write_to_r1", dataToSave, options);
@@ -330,6 +329,21 @@ export default function App() {
     return result.data;
   }
 
+  async function handleImage(file, imageData) {
+    const { action, filePath } = await addOrRetrieveImage(imageData);
+    let signedUrl = null;
+
+    if (action === "add") {
+      toast.info("Uploading image...", { autoClose: 2000 });
+      signedUrl = await uploadImage(file, imageData.bucket, filePath);
+    } else if (action === "retrieve") {
+      toast.info("Image already exists. Retrieving...", { autoClose: 2000 });
+      signedUrl = await getSignedUrlForFile(filePath, imageData.bucket, "getObject");
+    }
+    console.log("signedUrl: ", signedUrl);
+    return signedUrl;
+  }
+
 
   const onChange = (e) => {
     const files = Array.from(e.target.files);
@@ -340,7 +354,6 @@ export default function App() {
     }
 
     files.forEach(async (file) => {
-
       setUploading(true);
 
       let exifData = {};
@@ -351,9 +364,13 @@ export default function App() {
         console.error(error.message);
         setUploading(false);
         return;
-      }      
+      }
 
-      let { convertedFile, mimeType, fileExtension } = await convertHEICToAny(file, "image/jpeg", 1.0);
+      let { convertedFile, mimeType, fileExtension } = await convertHEICToAny(
+        file,
+        "image/jpeg",
+        1.0
+      );
 
       const bucket = process.env.REACT_APP_R2_BUCKET_NAME;
       const generatedUUID = uuidv4();
@@ -368,38 +385,47 @@ export default function App() {
         filePath: proposedFilePath,
         bucket: bucket,
         mimeType: mimeType,
-        exifData: exifData
+        exifData: exifData,
       };
       console.log("dataToSave: ", dataToSave);
 
-      const { action, filePath } = await addOrRetrieveImage(dataToSave);
-
-      if (action === "add") {
-        toast.info("Uploading image...", { autoClose: 2000 });
-        try {
-          console.log("filePath: ", filePath);
-          let signedUrl = await uploadImage(convertedFile, bucket, filePath);
-          console.log("signedUrl: ", signedUrl);
-          setUploading(false);
-          setImages((prevImages) => [...prevImages, signedUrl]);
-        } catch (error) {
-          toast.info("Error uploading image...", { autoClose: 2000 });
-          console.error(error.message);
-          setUploading(false);
-          return;
-        }
-      } else if (action === "retrieve") {
-        console.log("filePath: ", filePath);
-        toast.info("Image already exists. Retrieving...", { autoClose: 2000 });
-        let signedUrl = await getSignedUrlForFile(filePath, bucket, "getObject");
-        console.log("signedUrl: ", signedUrl);
-        setUploading(false);        
-        setImages((prevImages) => [...prevImages, signedUrl]);
-        return;
+      let imageURL = null;
+      try {
+        imageURL = await handleImage(convertedFile, dataToSave);
+      } catch (error) {
+        toast.info("Error: " + error.message, { autoClose: 2000 });
+        console.error(error.message);
       }
 
+      setImages((prevImages) => [...prevImages, imageURL]);
+      setUploading(false);
+      return;
 
+      // const { action, filePath } = await addOrRetrieveImage(dataToSave);
 
+      // if (action === "add") {
+      //   toast.info("Uploading image...", { autoClose: 2000 });
+      //   try {
+      //     console.log("filePath: ", filePath);
+      //     let signedUrl = await uploadImage(convertedFile, bucket, filePath);
+      //     console.log("signedUrl: ", signedUrl);
+      //     setUploading(false);
+      //     setImages((prevImages) => [...prevImages, signedUrl]);
+      //   } catch (error) {
+      //     toast.info("Error uploading image...", { autoClose: 2000 });
+      //     console.error(error.message);
+      //     setUploading(false);
+      //     return;
+      //   }
+      // } else if (action === "retrieve") {
+      //   console.log("filePath: ", filePath);
+      //   toast.info("Image already exists. Retrieving...", { autoClose: 2000 });
+      //   let signedUrl = await getSignedUrlForFile(filePath, bucket, "getObject");
+      //   console.log("signedUrl: ", signedUrl);
+      //   setUploading(false);
+      //   setImages((prevImages) => [...prevImages, signedUrl]);
+      //   return;
+      // }
     });
   };
 
