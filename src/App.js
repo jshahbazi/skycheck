@@ -322,10 +322,11 @@ export default function App() {
 
     console.log("write_to_r1 result: ", result);
     console.log("write_to_r1 status: ", result.status);
-    const { action, filePath } = result.data;
+    // const { action, filePath } = result.data;
     console.log("write_to_r1 action: ", action);
     console.log("write_to_r1 filePath: ", filePath);
-    // console.log("write_to_r1 data: ", result.data);
+
+    console.log("write_to_r1 data: ", JSON.stringify(result.data));
     return result.data;
   }
 
