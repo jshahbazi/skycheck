@@ -338,7 +338,7 @@ export default function App() {
 
       setUploading(true);
 
-      const exifData = {};
+      let exifData = {};
       try {
         exifData = await extractExifData(file);
         console.log(exifData);
@@ -367,7 +367,7 @@ export default function App() {
       };
       console.log("dataToSave: ", dataToSave);
 
-      let { action, filePath } = await addOrRetrieveImage(dataToSave);
+      const { action, filePath } = await addOrRetrieveImage(dataToSave);
 
       if (action === "add") {
         toast.info("Uploading image...", { autoClose: 2000 });
