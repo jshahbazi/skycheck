@@ -56,7 +56,7 @@ export const onRequestPost = async ({ request, env, ctx }) => {
       const { results } = await stmt.all();
       return new Response(results[0].file_location, { status: 200 });
     } else {
-      return new Response(`Failed to insert image ${dataToSave.imageHash} into database`);
+      return new Response(e.message, { status: 500 });
     }
   }
 
