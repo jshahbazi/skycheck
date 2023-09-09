@@ -40,9 +40,9 @@ export const onRequestPost = async ({ request, env, ctx }) => {
         dataToSave.exifData.PixelWidth
       )
       .run();
-    // console.log("done inserting")
-    // const result = await stmt.all();
-    // console.log("result: ", result)
+    
+    
+    
     console.log("result1: ", JSON.stringify(result));
     return new Response(result, { status: 200 });
       // if (success) {
@@ -57,8 +57,29 @@ export const onRequestPost = async ({ request, env, ctx }) => {
       const result = await env.SKYCHECK_DB.prepare("SELECT file_location FROM images WHERE hash = ?").bind(dataToSave.imageHash).run();
       // const { results } = await stmt.all();
       console.log("result2: ", JSON.stringify(result));
-
-      return new Response(result.file_location, { status: 200 });
+      // {
+      //   results: [
+      //     {
+      //       file_location: 'skycheck-images/87b89cd3-8736-417d-ad92-455b4ad6fddd.jpg'
+      //     }
+      //   ],
+      //   success: true,
+      //   meta: {
+      //     served_by: 'v3-prod',
+      //     duration: 0.1750039979815483,
+      //     changes: 0,
+      //     last_row_id: 0,
+      //     changed_db: false,
+      //     size_after: 20480,
+      //     rows_read: 1,
+      //     rows_written: 0
+      //   }
+      // }
+      if (result.results.length !== 1) {
+        return new Response(result.results.file_location, { status: 200 });
+      } else {
+        return new Response(`Failed to get file_location for ${dataToSave.imageHash}: ` + JSON.stringify(result), { status: 500 });
+      }
     } else {
       return new Response(e.message, { status: 200 });
     }

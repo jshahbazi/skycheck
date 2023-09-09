@@ -237,7 +237,7 @@ export default function App() {
 
         exifData = {
           Camera: exif.Make + " " + exif.Model, // Combining the Make and Model to get the Camera name
-          DigitalZoomRatio: exif.DigitalZoomRatio,
+          DigitalZoomRatio: exif.DigitalZoomRatio || 1.0,
           Latitude: exif.latitude, // exifr automatically parses GPS Latitude and Longitude into these keys for ease of use
           Longitude: exif.longitude,
           CameraBearing: exif.GPSImgDirection, // This key holds the direction of the camera when the photo was taken
