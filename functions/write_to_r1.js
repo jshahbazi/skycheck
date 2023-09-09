@@ -12,7 +12,7 @@ export const onRequestPost = async ({ request, env, ctx }) => {
   // }
 
   try {
-    const stmt = await env.SKYCHECK_DB.prepare(
+    const stmt = env.SKYCHECK_DB.prepare(
       `insert into images (hash, file_location, bucket, mime_type, timestamp, camera, shutter_speed_value, camera_bearing, digital_zoom_ratio, exposure_time, focal_length, 
         focal_length_35mm, gps_altitude, gps_h_positioning_error, gps_speed, gps_speed_ref, latitude, longitude, pixel_height, pixel_width) values 
      (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
@@ -40,9 +40,9 @@ export const onRequestPost = async ({ request, env, ctx }) => {
         dataToSave.exifData.PixelWidth
       )
       .run();
-    console.log("done inserting")
+    // console.log("done inserting")
     const result = await stmt.all();
-    console.log("result: ", result)
+    // console.log("result: ", result)
     return new Response(result, { status: 200 });
       // if (success) {
       //   return new Response(dataToSave.fileLocation, { status: 200 });
@@ -53,11 +53,11 @@ export const onRequestPost = async ({ request, env, ctx }) => {
   } catch (e) {
     // Error: "D1_ERROR: Error: UNIQUE constraint failed: images.hash"
     if (e.message.includes("UNIQUE constraint failed")) {
-      const stmt = await env.SKYCHECK_DB.prepare("SELECT file_location FROM images WHERE hash = ?").bind(dataToSave.imageHash);
+      const stmt = env.SKYCHECK_DB.prepare("SELECT file_location FROM images WHERE hash = ?").bind(dataToSave.imageHash);
       const { results } = await stmt.all();
       return new Response(results[0].file_location, { status: 200 });
     } else {
-      return new Response(e.message, { status: 200 });
+      return new Response(e.message, { status: 500 });
     }
   }
 
