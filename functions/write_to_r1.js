@@ -40,8 +40,9 @@ export const onRequestPost = async ({ request, env, ctx }) => {
         dataToSave.exifData.PixelWidth
       )
       .run();
-    
+    console.log("done inserting")
     const result = await stmt.all();
+    console.log("result: ", result)
     return new Response(result, { status: 200 });
       // if (success) {
       //   return new Response(dataToSave.fileLocation, { status: 200 });
@@ -56,7 +57,7 @@ export const onRequestPost = async ({ request, env, ctx }) => {
       const { results } = await stmt.all();
       return new Response(results[0].file_location, { status: 200 });
     } else {
-      return new Response(e.message, { status: 500 });
+      return new Response(e.message, { status: 200 });
     }
   }
 
