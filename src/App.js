@@ -337,8 +337,10 @@ export default function App() {
     files.forEach(async (file) => {
 
       setUploading(true);
+
+      const exifData = {};
       try {
-        const exifData = await extractExifData(file);
+        exifData = await extractExifData(file);
         console.log(exifData);
       } catch (error) {
         console.error(error.message);
