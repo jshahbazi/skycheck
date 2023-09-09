@@ -357,7 +357,7 @@ export default function App() {
 
       const bucket = process.env.REACT_APP_R2_BUCKET_NAME;
       const generatedUUID = uuidv4();
-      const newFileName = `${generatedUUID}${fileExtension}`;
+      const newFileName = `${generatedUUID}.${fileExtension}`;
       const proposedFilePath = `${newFileName}`;
 
       const imageHash = await hashImage(file);
