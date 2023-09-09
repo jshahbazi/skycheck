@@ -332,10 +332,7 @@ export default function App() {
         console.error("Error:", error.message);
       }
 
-      // const result = await axios.get("/upload");
-      // // console.log("upload status: ", result.status);
-      // // console.log("upload data: ", result.data);
-      // console.log("d1 result: ", result);
+
     });
   };
 
