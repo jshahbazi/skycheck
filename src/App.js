@@ -319,10 +319,14 @@ export default function App() {
       },
     };
     const result = await axios.post("/write_to_r1", dataToSave, options);
+
     console.log("write_to_r1 result: ", result);
     console.log("write_to_r1 status: ", result.status);
-    console.log("write_to_r1 data: ", result.data);
-    return result.status;
+    const { action, filePath } = result.data;
+    console.log("write_to_r1 action: ", action);
+    console.log("write_to_r1 filePath: ", filePath);
+    // console.log("write_to_r1 data: ", result.data);
+    return result.data;
   }
 
 
