@@ -57,7 +57,7 @@ export const onRequestPost = async ({ request, env, ctx }) => {
       const { results } = await stmt.all();
       return new Response(results[0].file_location, { status: 200 });
     } else {
-      return new Response(e.message, { status: 500 });
+      return new Response(e.message, { status: 200 });
     }
   }
 
