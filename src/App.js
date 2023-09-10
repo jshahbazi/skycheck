@@ -18,8 +18,8 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { S3Client } from "@aws-sdk/client-s3";
 
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlane } from "@fortawesome/free-solid-svg-icons";
+// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// import { faPlane } from "@fortawesome/free-solid-svg-icons";
 
 import heic2any from "heic2any";
 
@@ -327,22 +327,67 @@ export default function App() {
     const latRad = toRadians(latitude);
     const lonRad = toRadians(longitude);
 
+    console.log("latRad: ", latRad);
+    console.log("lonRad: ", lonRad);
+
     const endLatRad = Math.asin(Math.sin(latRad) * Math.cos(dRad) + 
                                 Math.cos(latRad) * Math.sin(dRad) * Math.cos(toRadians(bearing)));
     
     const endLonRad = lonRad + Math.atan2(Math.sin(toRadians(bearing)) * Math.sin(dRad) * Math.cos(latRad), 
                                           Math.cos(dRad) - Math.sin(latRad) * Math.sin(endLatRad));
 
+    console.log("endLatRad: ", endLatRad);
+    console.log("endLonRad: ", endLonRad);
+
     const endLat = toDegrees(endLatRad);
     const endLon = toDegrees(endLonRad);
+
+    console.log("endLat: ", endLat);
+    console.log("endLon: ", endLon);
+
+    return [endLat, endLon];
+  };
+  
+  const calculateEndpoint2 = (latitude, longitude, bearing, distance) => {
+    const R = 6371.0;  // Earth radius in kilometers
+    const dRad = distance / R;
+
+    const latRad = toRadians(latitude);
+    const lonRad = toRadians(longitude);
+
+    console.log("latRad: ", latRad);
+    console.log("lonRad: ", lonRad);
+
+    const endLatRad = Math.asin(Math.sin(latRad) * Math.cos(dRad) + 
+                                Math.cos(latRad) * Math.sin(dRad) * Math.cos(toRadians(bearing)));
+    
+    const endLonRad = lonRad + Math.atan2(Math.sin(toRadians(bearing)) * Math.sin(dRad), 
+                                          Math.cos(dRad) - Math.sin(latRad) * Math.sin(endLatRad));
+
+    console.log("endLatRad: ", endLatRad);
+    console.log("endLonRad: ", endLonRad);
+
+    const endLat = toDegrees(endLatRad);
+    const endLon = toDegrees(endLonRad) % 180; // Normalize to -180 to 180
+
+    console.log("endLat: ", endLat);
+    console.log("endLon: ", endLon);
 
     return [endLat, endLon];
 };
 
+
 const calculateFovEndpoints = (cameraLat, cameraLon, bearing, fov, maxDistance = 20) => {
+    const P11 = calculateEndpoint(cameraLat, cameraLon, bearing - (fov / 2), maxDistance);
+    const P22 = calculateEndpoint(cameraLat, cameraLon, bearing + (fov / 2), maxDistance);
+
+    console.log("P1, P2: ", P11, P22);
+  
     const P1 = calculateEndpoint(cameraLat, cameraLon, bearing - (fov / 2), maxDistance);
     const P2 = calculateEndpoint(cameraLat, cameraLon, bearing + (fov / 2), maxDistance);
-
+  
+    console.log("P1, P2: ", P1, P2);
+  
     return [P1, P2];
 };
 
@@ -399,7 +444,7 @@ const toDegrees = (radians) => {
         console.log("calculatedFov: ", calculatedFov);
         console.log("cameraBearing: ", CameraBearing);
         console.log("mapPosition: ", [Latitude, Longitude]);
-        console.log("P1, P2: ", P1, P2);
+        // console.log("P1, P2: ", P1, P2);
 
         // let cameraData = { Latitude, Longitude, CameraBearing };
 
