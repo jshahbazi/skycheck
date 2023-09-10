@@ -383,8 +383,8 @@ const calculateFovEndpoints = (cameraLat, cameraLon, bearing, fov, maxDistance =
 
     console.log("P1, P2: ", P11, P22);
   
-    const P1 = calculateEndpoint(cameraLat, cameraLon, bearing - (fov / 2), maxDistance);
-    const P2 = calculateEndpoint(cameraLat, cameraLon, bearing + (fov / 2), maxDistance);
+    const P1 = calculateEndpoint2(cameraLat, cameraLon, bearing - (fov / 2), maxDistance);
+    const P2 = calculateEndpoint2(cameraLat, cameraLon, bearing + (fov / 2), maxDistance);
   
     console.log("P1, P2: ", P1, P2);
   
