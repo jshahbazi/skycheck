@@ -8,7 +8,7 @@ import Footer from "./components/Footer";
 import { r2 } from "./components/r2";
 import "./App.css";
 import "leaflet/dist/leaflet.css";
-import { MapContainer, TileLayer, Marker, Popup, Polygon } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polyline, Polygon, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
@@ -33,8 +33,10 @@ export default function App() {
 
   const [mapPosition, setMapPosition] = useState([51.505, -0.09]);
   const [planes, setPlanes] = useState([]); // assume planes is an array of objects {id, position: [lat, lon]}
-  const [bearing, setBearing] = useState(0); // just an example value
+  const [bearing, setBearing] = useState(0);
   const [fov, setFov] = useState(45); // field of view in degrees
+  const [cameraData, setCameraData] = useState({});
+  const [pCoords, setPCoords] = useState([]);
 
   // const [file, setFile] = useState<File | undefined>(undefined);
 
@@ -97,13 +99,10 @@ export default function App() {
     try {
       const options = {
         headers: {
-          "Content-Type":
-            mimeType || fileOrBlob.type || "application/octet-stream", // Use provided mimeType, or fileOrBlob's type, or default to 'application/octet-stream'
+          "Content-Type": mimeType || fileOrBlob.type || "application/octet-stream", // Use provided mimeType, or fileOrBlob's type, or default to 'application/octet-stream'
         },
       };
       const result = await axios.put(signedUrl, fileOrBlob, options);
-      // console.log("upload status: ", result.status);
-      // console.log("upload data: ", result.data);
       return result.status;
     } catch (error) {
       console.error("Error:", error.message);
@@ -113,32 +112,11 @@ export default function App() {
   async function downloadFile(signedUrl) {
     try {
       const response = await axios.get(signedUrl, { responseType: "blob" });
-      console.log("download status: ", response.status);
-      console.log("download result: ", response);
-      console.log(typeof response.data);
-
       return response.data;
     } catch (error) {
       console.error("Error:", error.message);
     }
   }
-
-  //   function base64ToBlob(base64, mimeType = '') {
-  //     // Decode the base64 string
-  //     const byteString = atob(base64.split(',')[1]);
-
-  //     // Create a Uint8Array from the byte string
-  //     const arrayBuffer = new ArrayBuffer(byteString.length);
-  //     const uint8Array = new Uint8Array(arrayBuffer);
-  //     for (let i = 0; i < byteString.length; i++) {
-  //         uint8Array[i] = byteString.charCodeAt(i);
-  //     }
-
-  //     // Create a blob from the Uint8Array
-  //     const blob = new Blob([uint8Array], { type: mimeType });
-
-  //     return blob;
-  // }
 
   // async function checkExifData(image) {
   //   EXIF.getData(image, function () {
@@ -197,26 +175,15 @@ export default function App() {
   //     reader.readAsArrayBuffer(file);
   // }
   async function hashImage(file) {
-    // Step 1: Read the file as an ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
-
-    // Step 2: Hash the ArrayBuffer
     const crypto = window.crypto;
     const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
-
-    // Step 3: Convert the hash to a hexadecimal string
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-
+    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
     return hashHex;
   }
 
   async function extractExifData(file) {
-    // Define the supported types if it's not already defined elsewhere
-    // const types = ["image/png", "image/jpeg", "image/heic"]; // Add or remove supported types as needed
-
     if (file.type === "") {
       toast.error(`Unknown file type`);
       throw new Error("Unknown file type");
@@ -229,15 +196,12 @@ export default function App() {
 
     if (file.size > 150000000) {
       toast.error(`'${file.name}' is too large, please pick a smaller file`);
-      throw new Error(
-        `'${file.name}' is too large, please pick a smaller file`
-      );
+      throw new Error(`'${file.name}' is too large, please pick a smaller file`);
     }
 
     const exif = await exifr.parse(file);
     if (exif) {
-      const exifDateTimeStr =
-        exif.DateTimeOriginal || exif.DateTimeDigitized || exif.CreateDate;
+      const exifDateTimeStr = exif.DateTimeOriginal || exif.DateTimeDigitized || exif.CreateDate;
       const dateObj = new Date(exifDateTimeStr);
       const unixTimestamp = Math.floor(dateObj.getTime() / 1000);
 
@@ -259,7 +223,6 @@ export default function App() {
         ExposureTime: exif.ExposureTime,
         ShutterSpeedValue: exif.ShutterSpeedValue,
       };
-
       return exifData;
     } else {
       toast.error("No EXIF data found.");
@@ -340,14 +303,59 @@ export default function App() {
       toast.info("Image already exists. Retrieving...", { autoClose: 2000 });
       signedUrl = await getSignedUrlForFile(filePath, imageData.bucket, "getObject");
     }
-    console.log("signedUrl: ", signedUrl);
     return signedUrl;
   }
 
+  function estimateSensorSize(pixelWidth, pixelHeight, actualFocalLength, focalLength35mm) {
+    const cropFactor = focalLength35mm / actualFocalLength;
+    const sensorWidth = 36 / cropFactor;
+    const pixelSizeWidth = sensorWidth / pixelWidth;
+    const sensorHeight = 24 / cropFactor;
+
+    return [sensorWidth, sensorHeight];
+  }
+
+  function calculateFov(sensorSize, focalLength) {
+    return 2 * Math.atan(sensorSize / (2 * focalLength)) * (180 / Math.PI);
+  }
+
+  const calculateEndpoint = (latitude, longitude, bearing, distance) => {
+    const R = 6371.0;  // Earth radius in kilometers
+    const dRad = distance / R;
+
+    const latRad = toRadians(latitude);
+    const lonRad = toRadians(longitude);
+
+    const endLatRad = Math.asin(Math.sin(latRad) * Math.cos(dRad) + 
+                                Math.cos(latRad) * Math.sin(dRad) * Math.cos(toRadians(bearing)));
+    
+    const endLonRad = lonRad + Math.atan2(Math.sin(toRadians(bearing)) * Math.sin(dRad) * Math.cos(latRad), 
+                                          Math.cos(dRad) - Math.sin(latRad) * Math.sin(endLatRad));
+
+    const endLat = toDegrees(endLatRad);
+    const endLon = toDegrees(endLonRad);
+
+    return [endLat, endLon];
+};
+
+const calculateFovEndpoints = (cameraLat, cameraLon, bearing, fov, maxDistance = 20) => {
+    const P1 = calculateEndpoint(cameraLat, cameraLon, bearing - (fov / 2), maxDistance);
+    const P2 = calculateEndpoint(cameraLat, cameraLon, bearing + (fov / 2), maxDistance);
+
+    return [P1, P2];
+};
+
+// Utility functions to convert degrees to radians and vice versa
+const toRadians = (degrees) => {
+    return degrees * (Math.PI / 180);
+};
+
+const toDegrees = (radians) => {
+    return radians * (180 / Math.PI);
+};
 
   const onChange = (e) => {
     const files = Array.from(e.target.files);
-    // const types = ["image/png", "image/jpeg", "image/heic"];
 
     if (files.length > 1) {
       toast.error("Only 1 image can currently be uploaded at a time");
@@ -360,25 +368,56 @@ export default function App() {
       try {
         exifData = await extractExifData(file);
         console.log(exifData);
+        // Camera: exif.Make + " " + exif.Model,
+        // DigitalZoomRatio: exif.DigitalZoomRatio || 1.0,
+        // Latitude: exif.latitude,
+        // Longitude: exif.longitude,
+        // CameraBearing: exif.GPSImgDirection,
+        // PixelWidth: exif.ImageWidth || exif.ExifImageWidth,
+        // PixelHeight: exif.ImageHeight || exif.ExifImageHeight,
+        // FocalLength35mm: exif.FocalLengthIn35mmFormat,
+        // FocalLength: exif.FocalLength,
+        // Timestamp: unixTimestamp,
+        // GPSAltitude: exif.GPSAltitude,
+        // GPSHPositioningError: exif.GPSHPositioningError,
+        // GPSSpeed: exif.GPSSpeed,
+        // GPSSpeedRef: exif.GPSSpeedRef,
+        // ExposureTime: exif.ExposureTime,
+        // ShutterSpeedValue: exif.ShutterSpeedValue,
+
+        let { Latitude, Longitude, CameraBearing, PixelWidth, PixelHeight, FocalLength, FocalLength35mm } = exifData;
+
+        const sensorWidthHeight = estimateSensorSize(PixelWidth, PixelHeight, FocalLength, FocalLength35mm);
+        const calculatedFov = calculateFov(sensorWidthHeight[0], FocalLength);
+        const [P1, P2] = calculateFovEndpoints(Latitude, Longitude, calculatedFov, 20);     
+        setPCoords([P1, P2]);
+        setFov(calculatedFov);
+        setBearing(CameraBearing);
+        setMapPosition([Latitude, Longitude]);
+
+
+        console.log(P1, P2);
+        console.log("calculatedFov: ", calculatedFov);
+        console.log("cameraBearing: ", CameraBearing);
+        console.log("mapPosition: ", [Latitude, Longitude]);
+
+        // let cameraData = { Latitude, Longitude, CameraBearing };
+
+        // setCameraData((prevState) => ({ ...prevState, name: "newName" }));
       } catch (error) {
         console.error(error.message);
+        toast.error("Error: " + error.message, { autoClose: 2000 });
         setUploading(false);
         return;
       }
 
-      let { convertedFile, mimeType, fileExtension } = await convertHEICToAny(
-        file,
-        "image/jpeg",
-        1.0
-      );
+      let { convertedFile, mimeType, fileExtension } = await convertHEICToAny(file, "image/jpeg", 1.0);
 
       const bucket = process.env.REACT_APP_R2_BUCKET_NAME;
       const generatedUUID = uuidv4();
       const newFileName = `${generatedUUID}.${fileExtension}`;
       const proposedFilePath = `${newFileName}`;
-
       const imageHash = await hashImage(file);
-      console.log("imageHash: ", imageHash);
 
       const dataToSave = {
         imageHash: imageHash,
@@ -387,7 +426,6 @@ export default function App() {
         mimeType: mimeType,
         exifData: exifData,
       };
-      console.log("dataToSave: ", dataToSave);
 
       let imageURL = null;
       try {
@@ -400,32 +438,6 @@ export default function App() {
       setImages((prevImages) => [...prevImages, imageURL]);
       setUploading(false);
       return;
-
-      // const { action, filePath } = await addOrRetrieveImage(dataToSave);
-
-      // if (action === "add") {
-      //   toast.info("Uploading image...", { autoClose: 2000 });
-      //   try {
-      //     console.log("filePath: ", filePath);
-      //     let signedUrl = await uploadImage(convertedFile, bucket, filePath);
-      //     console.log("signedUrl: ", signedUrl);
-      //     setUploading(false);
-      //     setImages((prevImages) => [...prevImages, signedUrl]);
-      //   } catch (error) {
-      //     toast.info("Error uploading image...", { autoClose: 2000 });
-      //     console.error(error.message);
-      //     setUploading(false);
-      //     return;
-      //   }
-      // } else if (action === "retrieve") {
-      //   console.log("filePath: ", filePath);
-      //   toast.info("Image already exists. Retrieving...", { autoClose: 2000 });
-      //   let signedUrl = await getSignedUrlForFile(filePath, bucket, "getObject");
-      //   console.log("signedUrl: ", signedUrl);
-      //   setUploading(false);
-      //   setImages((prevImages) => [...prevImages, signedUrl]);
-      //   return;
-      // }
     });
   };
 
@@ -434,11 +446,7 @@ export default function App() {
   };
 
   const getFOVPolygon = () => {
-    return [
-      mapPosition,
-      [mapPosition[0] + 0.01, mapPosition[1] + 0.01],
-      [mapPosition[0] - 0.01, mapPosition[1] + 0.01],
-    ];
+    return [mapPosition, [mapPosition[0] + 0.01, mapPosition[1] + 0.01], [mapPosition[0] - 0.01, mapPosition[1] + 0.01]];
   };
 
   // const planeIcon = new L.Icon({
@@ -446,7 +454,7 @@ export default function App() {
   //   iconSize: [32, 32],
   // });
 
-  const planeIcon = () => <FontAwesomeIcon icon={faPlane} />;
+  // const planeIcon = () => <FontAwesomeIcon icon={faPlane} />;
 
   const onImagesError = (image) => {
     removeImage(image);
@@ -460,35 +468,14 @@ export default function App() {
       case images.length > 0:
         return (
           <div>
-            <ImageList
-              images={images}
-              removeImage={removeImage}
-              onError={onImagesError}
-            />
+            <ImageList images={images} removeImage={removeImage} onError={onImagesError} />
+            <FOVMap cameraLat={mapPosition[0]} cameraLon={mapPosition[1]} P1={pCoords[0]} P2={pCoords[1]} />
           </div>
         );
       default:
         return (
           <div>
             <UploadButton onChange={onChange} />
-            <MapContainer
-              center={mapPosition}
-              zoom={13}
-              scrollWheelZoom={false}
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {/* {planes.map(plane => (
-                <Marker key={plane.id} position={plane.position} icon={planeIcon}>
-                  <Popup>
-                    Plane ID: {plane.id}
-                  </Popup>
-                </Marker>
-              ))} */}
-              <Polygon positions={getFOVPolygon()} />
-            </MapContainer>
           </div>
         );
     }
@@ -507,11 +494,7 @@ export default function App() {
               <a href="#">Contact</a>
             </li>
             <li>
-              <a
-                href="https://www.zeffy.com/en-US/donation-form/01e7c013-796a-4574-b8b3-3c8c96a6cefd"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href="https://www.zeffy.com/en-US/donation-form/01e7c013-796a-4574-b8b3-3c8c96a6cefd" target="_blank" rel="noopener noreferrer">
                 Donate
               </a>
             </li>
@@ -519,10 +502,7 @@ export default function App() {
         </nav>
       </header>
       <ToastContainer />
-      <div className="other-text">
-        Check the sky for aircraft and other objects. Upload original photos
-        that contain GPS data and we will analyze them for you.
-      </div>
+      <div className="other-text">Check the sky for aircraft and other objects. Upload original photos that contain GPS data and we will analyze them for you.</div>
 
       {/* <UploadButton onChange={onChange} /> */}
       <div className="buttons">{content()}</div>
