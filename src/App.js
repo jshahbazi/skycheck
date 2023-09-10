@@ -349,29 +349,33 @@ export default function App() {
   };
   
   const calculateEndpoint2 = (latitude, longitude, bearing, distance) => {
-    const R = 6371.0;  // Earth's radius in kilometers
-    const d = distance / R;  // Convert distance to angular distance in radians
+    const R = 6371.0; // Earth's radius in kilometers
+    const d = distance / R; // Convert distance to angular distance in radians
+
+    const scaleFactor = BigInt(1000000000); // Scale factor
 
     const lat1 = toRadians(latitude);
     const lon1 = toRadians(longitude);
     const brng = toRadians(bearing);
 
-    console.log("lat1: ", lat1);
-    console.log("lon1: ", lon1);
-    console.log("brng: ", brng);
+    // Convert to BigInt
+    const lat1Scaled = BigInt(lat1 * scaleFactor);
+    const lon1Scaled = BigInt(lon1 * scaleFactor);
+    const dScaled = BigInt(d * scaleFactor);
+    const brngScaled = BigInt(brng * scaleFactor);
 
     // Calculate new latitude
-    const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(brng));
-
+    const lat2Scaled = lat1Scaled * Math.cos(Number(dScaled)) + 
+                       (Math.cos(Number(lat1Scaled)) * Math.sin(Number(dScaled)) * Math.cos(Number(brngScaled)));
+    
     // Calculate new longitude
-    const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(d) * Math.cos(lat1), 
-                                  Math.cos(d) - Math.sin(lat1) * Math.sin(lat2));
+    const lon2Scaled = lon1Scaled + 
+                       Math.atan2(Math.sin(Number(brngScaled)) * Math.sin(Number(dScaled)) * Math.cos(Number(lat1Scaled)), 
+                                  Math.cos(Number(dScaled)) - Math.sin(Number(lat1Scaled)) * Math.sin(Number(lat2Scaled)));
 
-    console.log("lat2: ", lat2);
-    console.log("lon2: ", lon2);
-
-    return [toDegrees(lat2), toDegrees(lon2)];
+    return [Number(lat2Scaled) / scaleFactor, Number(lon2Scaled) / scaleFactor];
 };
+
 
 
 
