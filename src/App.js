@@ -6,6 +6,7 @@ import ImageList from "./components/Images";
 import UploadButton from "./components/Buttons";
 import Footer from "./components/Footer";
 import { r2 } from "./components/r2";
+import FOVMap from "./components/FOVmap";
 import "./App.css";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, TileLayer, Marker, Polyline, Polygon, Tooltip } from "react-leaflet";
@@ -395,11 +396,10 @@ const toDegrees = (radians) => {
         setBearing(CameraBearing);
         setMapPosition([Latitude, Longitude]);
 
-
-        console.log(P1, P2);
         console.log("calculatedFov: ", calculatedFov);
         console.log("cameraBearing: ", CameraBearing);
         console.log("mapPosition: ", [Latitude, Longitude]);
+        console.log("P1, P2: ", P1, P2);
 
         // let cameraData = { Latitude, Longitude, CameraBearing };
 
