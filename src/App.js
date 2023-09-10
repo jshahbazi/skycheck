@@ -349,32 +349,30 @@ export default function App() {
   };
   
   const calculateEndpoint2 = (latitude, longitude, bearing, distance) => {
-    const R = 6371.0;  // Earth radius in kilometers
-    const dRad = distance / R;
+    const R = 6371.0;  // Earth's radius in kilometers
+    const d = distance / R;  // Convert distance to angular distance in radians
 
-    const latRad = toRadians(latitude);
-    const lonRad = toRadians(longitude);
+    const lat1 = toRadians(latitude);
+    const lon1 = toRadians(longitude);
+    const brng = toRadians(bearing);
 
-    console.log("latRad: ", latRad);
-    console.log("lonRad: ", lonRad);
+    console.log("lat1: ", lat1);
+    console.log("lon1: ", lon1);
+    console.log("brng: ", brng);
 
-    const endLatRad = Math.asin(Math.sin(latRad) * Math.cos(dRad) + 
-                                Math.cos(latRad) * Math.sin(dRad) * Math.cos(toRadians(bearing)));
-    
-    const endLonRad = lonRad + Math.atan2(Math.sin(toRadians(bearing)) * Math.sin(dRad), 
-                                          Math.cos(dRad) - Math.sin(latRad) * Math.sin(endLatRad));
+    // Calculate new latitude
+    const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(brng));
 
-    console.log("endLatRad: ", endLatRad);
-    console.log("endLonRad: ", endLonRad);
+    // Calculate new longitude
+    const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(d) * Math.cos(lat1), 
+                                  Math.cos(d) - Math.sin(lat1) * Math.sin(lat2));
 
-    const endLat = toDegrees(endLatRad);
-    const endLon = toDegrees(endLonRad) % 180; // Normalize to -180 to 180
+    console.log("lat2: ", lat2);
+    console.log("lon2: ", lon2);
 
-    console.log("endLat: ", endLat);
-    console.log("endLon: ", endLon);
-
-    return [endLat, endLon];
+    return [toDegrees(lat2), toDegrees(lon2)];
 };
+
 
 
 const calculateFovEndpoints = (cameraLat, cameraLon, bearing, fov, maxDistance = 20) => {
