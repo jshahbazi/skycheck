@@ -6,7 +6,7 @@ import ImageList from "./components/Images";
 import UploadButton from "./components/Buttons";
 import Footer from "./components/Footer";
 // import { r2 } from "./components/r2";
-import FOVMap from "./components/FOVMap"; 
+import FOVMap from "./components/FOVMap";
 import "./App.css";
 import "leaflet/dist/leaflet.css";
 // import { MapContainer, TileLayer, Marker, Polyline, Polygon, Tooltip } from "react-leaflet";
@@ -321,22 +321,21 @@ export default function App() {
   }
 
   const calculateEndpoint = (latitude, longitude, bearing, distance) => {
-    const R = 6371.0;  // Earth radius in kilometers
+    const R = 6371.0; // Earth radius in kilometers
     const dRad = distance / R;
 
     const latRad = toRadians(latitude);
     const lonRad = toRadians(longitude);
     const bearingRad = toRadians(bearing);
 
+    console.log("bearing: ", bearing);
     console.log("latRad: ", latRad);
     console.log("lonRad: ", lonRad);
     console.log("bearingRad: ", bearingRad);
 
-    const endLatRad = Math.asin(Math.sin(latRad) * Math.cos(dRad) + 
-                                Math.cos(latRad) * Math.sin(dRad) * Math.cos(bearingRad));
-    
-    const endLonRad = lonRad + Math.atan2(Math.sin(toRadians(bearing)) * Math.sin(dRad) * Math.cos(latRad), 
-                                          Math.cos(dRad) - Math.sin(latRad) * Math.sin(endLatRad));
+    const endLatRad = Math.asin(Math.sin(latRad) * Math.cos(dRad) + Math.cos(latRad) * Math.sin(dRad) * Math.cos(bearingRad));
+
+    const endLonRad = lonRad + Math.atan2(Math.sin(toRadians(bearing)) * Math.sin(dRad) * Math.cos(latRad), Math.cos(dRad) - Math.sin(latRad) * Math.sin(endLatRad));
 
     console.log("endLatRad: ", endLatRad);
     console.log("endLonRad: ", endLonRad);
@@ -349,7 +348,7 @@ export default function App() {
 
     return [endLat, endLon];
   };
-  
+
   const calculateEndpoint2 = (latitude, longitude, bearing, distance) => {
     const R = 6371.0; // Earth's radius in kilometers
     const d = distance / R; // Convert distance to angular distance in radians
@@ -367,42 +366,37 @@ export default function App() {
     const brngScaled = BigInt(brng * scaleFactor);
 
     // Calculate new latitude
-    const lat2Scaled = lat1Scaled * Math.cos(Number(dScaled)) + 
-                       (Math.cos(Number(lat1Scaled)) * Math.sin(Number(dScaled)) * Math.cos(Number(brngScaled)));
-    
+    const lat2Scaled = lat1Scaled * Math.cos(Number(dScaled)) + Math.cos(Number(lat1Scaled)) * Math.sin(Number(dScaled)) * Math.cos(Number(brngScaled));
+
     // Calculate new longitude
-    const lon2Scaled = lon1Scaled + 
-                       Math.atan2(Math.sin(Number(brngScaled)) * Math.sin(Number(dScaled)) * Math.cos(Number(lat1Scaled)), 
-                                  Math.cos(Number(dScaled)) - Math.sin(Number(lat1Scaled)) * Math.sin(Number(lat2Scaled)));
+    const lon2Scaled = lon1Scaled + Math.atan2(Math.sin(Number(brngScaled)) * Math.sin(Number(dScaled)) * Math.cos(Number(lat1Scaled)), Math.cos(Number(dScaled)) - Math.sin(Number(lat1Scaled)) * Math.sin(Number(lat2Scaled)));
 
     return [Number(lat2Scaled) / scaleFactor, Number(lon2Scaled) / scaleFactor];
-};
+  };
 
+  const calculateFovEndpoints = (cameraLat, cameraLon, bearing, fov, maxDistance = 20) => {
+    console.log("fov: ", fov);
+    const P1 = calculateEndpoint(cameraLat, cameraLon, bearing - fov / 2, maxDistance);
+    const P2 = calculateEndpoint(cameraLat, cameraLon, bearing + fov / 2, maxDistance);
 
-
-
-const calculateFovEndpoints = (cameraLat, cameraLon, bearing, fov, maxDistance = 20) => {
-    const P11 = calculateEndpoint(cameraLat, cameraLon, bearing - (fov / 2), maxDistance);
-    const P22 = calculateEndpoint(cameraLat, cameraLon, bearing + (fov / 2), maxDistance);
-
-    console.log("P1, P2: ", P11, P22);
-  
-    const P1 = calculateEndpoint2(cameraLat, cameraLon, bearing - (fov / 2), maxDistance);
-    const P2 = calculateEndpoint2(cameraLat, cameraLon, bearing + (fov / 2), maxDistance);
-  
     console.log("P1, P2: ", P1, P2);
-  
+
+    // const P1 = calculateEndpoint2(cameraLat, cameraLon, bearing - (fov / 2), maxDistance);
+    // const P2 = calculateEndpoint2(cameraLat, cameraLon, bearing + (fov / 2), maxDistance);
+
+    // console.log("P1, P2: ", P1, P2);
+
     return [P1, P2];
-};
+  };
 
-// Utility functions to convert degrees to radians and vice versa
-const toRadians = (degrees) => {
+  // Utility functions to convert degrees to radians and vice versa
+  const toRadians = (degrees) => {
     return degrees * (Math.PI / 180);
-};
+  };
 
-const toDegrees = (radians) => {
+  const toDegrees = (radians) => {
     return radians * (180 / Math.PI);
-};
+  };
 
   const onChange = (e) => {
     const files = Array.from(e.target.files);
@@ -439,7 +433,7 @@ const toDegrees = (radians) => {
 
         const sensorWidthHeight = estimateSensorSize(PixelWidth, PixelHeight, FocalLength, FocalLength35mm);
         const calculatedFov = calculateFov(sensorWidthHeight[0], FocalLength);
-        const [P1, P2] = calculateFovEndpoints(Latitude, Longitude, calculatedFov, 20);     
+        const [P1, P2] = calculateFovEndpoints(Latitude, Longitude, calculatedFov, 20);
         setPCoords([P1, P2]);
         setFov(calculatedFov);
         setBearing(CameraBearing);
