@@ -281,7 +281,7 @@ export default function App() {
         "Content-Type": "application/json",
       },
     };
-    const result = await axios.post("/write_to_r1", dataToSave, options);
+    const result = await axios.post("http://localhost:8788/write_to_r1", dataToSave, options);
 
     console.log("write_to_r1 result: ", result);
     console.log("write_to_r1 status: ", result.status);
@@ -328,64 +328,19 @@ export default function App() {
     const lonRad = toRadians(longitude);
     const bearingRad = toRadians(bearing);
 
-    console.log("bearing: ", bearing);
-    console.log("latRad: ", latRad);
-    console.log("lonRad: ", lonRad);
-    console.log("bearingRad: ", bearingRad);
-
     const endLatRad = Math.asin(Math.sin(latRad) * Math.cos(dRad) + Math.cos(latRad) * Math.sin(dRad) * Math.cos(bearingRad));
 
-    const endLonRad = lonRad + Math.atan2(Math.sin(toRadians(bearing)) * Math.sin(dRad) * Math.cos(latRad), Math.cos(dRad) - Math.sin(latRad) * Math.sin(endLatRad));
-
-    console.log("endLatRad: ", endLatRad);
-    console.log("endLonRad: ", endLonRad);
+    const endLonRad = lonRad + Math.atan2(Math.sin(bearingRad) * Math.sin(dRad) * Math.cos(latRad), Math.cos(dRad) - Math.sin(latRad) * Math.sin(endLatRad));
 
     const endLat = toDegrees(endLatRad);
     const endLon = toDegrees(endLonRad);
 
-    console.log("endLat: ", endLat);
-    console.log("endLon: ", endLon);
-
     return [endLat, endLon];
   };
 
-  // const calculateEndpoint2 = (latitude, longitude, bearing, distance) => {
-  //   const R = 6371.0; // Earth's radius in kilometers
-  //   const d = distance / R; // Convert distance to angular distance in radians
-
-  //   const scaleFactor = BigInt(1000000000); // Scale factor
-
-  //   const lat1 = toRadians(latitude);
-  //   const lon1 = toRadians(longitude);
-  //   const brng = toRadians(bearing);
-
-  //   // Convert to BigInt
-  //   const lat1Scaled = BigInt(lat1 * scaleFactor);
-  //   const lon1Scaled = BigInt(lon1 * scaleFactor);
-  //   const dScaled = BigInt(d * scaleFactor);
-  //   const brngScaled = BigInt(brng * scaleFactor);
-
-  //   // Calculate new latitude
-  //   const lat2Scaled = lat1Scaled * Math.cos(Number(dScaled)) + Math.cos(Number(lat1Scaled)) * Math.sin(Number(dScaled)) * Math.cos(Number(brngScaled));
-
-  //   // Calculate new longitude
-  //   const lon2Scaled = lon1Scaled + Math.atan2(Math.sin(Number(brngScaled)) * Math.sin(Number(dScaled)) * Math.cos(Number(lat1Scaled)), Math.cos(Number(dScaled)) - Math.sin(Number(lat1Scaled)) * Math.sin(Number(lat2Scaled)));
-
-  //   return [Number(lat2Scaled) / scaleFactor, Number(lon2Scaled) / scaleFactor];
-  // };
-
-  const calculateFovEndpoints = (cameraLat, cameraLon, bearing, fov, maxDistance = 20) => {
-    console.log("fov: ", fov);
+  const calculateFovEndpoints = (cameraLat, cameraLon, bearing, fov, maxDistance) => {
     const P1 = calculateEndpoint(cameraLat, cameraLon, bearing - fov / 2, maxDistance);
     const P2 = calculateEndpoint(cameraLat, cameraLon, bearing + fov / 2, maxDistance);
-
-    console.log("P1, P2: ", P1, P2);
-
-    // const P1 = calculateEndpoint2(cameraLat, cameraLon, bearing - (fov / 2), maxDistance);
-    // const P2 = calculateEndpoint2(cameraLat, cameraLon, bearing + (fov / 2), maxDistance);
-
-    // console.log("P1, P2: ", P1, P2);
-
     return [P1, P2];
   };
 
@@ -432,19 +387,19 @@ export default function App() {
         let { Latitude, Longitude, CameraBearing, PixelWidth, PixelHeight, FocalLength, FocalLength35mm } = exifData;
 
         const sensorWidthHeight = estimateSensorSize(PixelWidth, PixelHeight, FocalLength, FocalLength35mm);
-        console.log("sensorWidthHeight[0]: ", sensorWidthHeight[0])
-        console.log("FocalLength: ", FocalLength)
+        // console.log("sensorWidthHeight[0]: ", sensorWidthHeight[0])
+        // console.log("FocalLength: ", FocalLength)
         const calculatedFov = calculateFov(sensorWidthHeight[0], FocalLength);
-        console.log("calculatedFov: ", calculatedFov);
+        // console.log("calculatedFov: ", calculatedFov);
         const [P1, P2] = calculateFovEndpoints(Latitude, Longitude, CameraBearing, calculatedFov, 20);
         setPCoords([P1, P2]);
         setFov(calculatedFov);
         setBearing(CameraBearing);
         setMapPosition([Latitude, Longitude]);
 
-        console.log("calculatedFov: ", calculatedFov);
-        console.log("cameraBearing: ", CameraBearing);
-        console.log("mapPosition: ", [Latitude, Longitude]);
+        // console.log("calculatedFov: ", calculatedFov);
+        // console.log("cameraBearing: ", CameraBearing);
+        // console.log("mapPosition: ", [Latitude, Longitude]);
         // console.log("P1, P2: ", P1, P2);
 
         // let cameraData = { Latitude, Longitude, CameraBearing };
@@ -491,9 +446,9 @@ export default function App() {
     setImages((prevImages) => prevImages.filter((image) => image !== id));
   };
 
-  const getFOVPolygon = () => {
-    return [mapPosition, [mapPosition[0] + 0.01, mapPosition[1] + 0.01], [mapPosition[0] - 0.01, mapPosition[1] + 0.01]];
-  };
+  // const getFOVPolygon = () => {
+  //   return [mapPosition, [mapPosition[0] + 0.01, mapPosition[1] + 0.01], [mapPosition[0] - 0.01, mapPosition[1] + 0.01]];
+  // };
 
   // const planeIcon = new L.Icon({
   //   iconUrl: '/path-to-your-plane-icon.png',
@@ -513,9 +468,13 @@ export default function App() {
         return <Spinner />;
       case images.length > 0:
         return (
-          <div>
-            <ImageList images={images} removeImage={removeImage} onError={onImagesError} />
-            <FOVMap cameraLat={mapPosition[0]} cameraLon={mapPosition[1]} P1={pCoords[0]} P2={pCoords[1]} />
+          <div className="container">
+            <div className="image-list">
+              <ImageList images={images} removeImage={removeImage} onError={onImagesError} />
+            </div>
+            <div className="fov-map">
+              <FOVMap cameraLat={mapPosition[0]} cameraLon={mapPosition[1]} P1={pCoords[0]} P2={pCoords[1]} />
+            </div>
           </div>
         );
       default:

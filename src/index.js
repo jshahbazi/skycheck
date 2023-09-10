@@ -1,7 +1,6 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';  // <-- Change this import
+import { createRoot } from 'react-dom/client'; 
 import App from './App';
-// import registerServiceWorker from './registerServiceWorker';
 
 const root = createRoot(document.getElementById("root"));
 root.render(
@@ -9,5 +8,3 @@ root.render(
     <App />
   </React.StrictMode>
 );
-
-// registerServiceWorker();

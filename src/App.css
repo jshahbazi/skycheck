@@ -305,3 +305,19 @@ footer .small-button.medium {
   height: 50vh;
 }
 
+.container {
+  display: flex;
+  flex-direction: column;
+  width: 100%; /* Or specify a specific width if you prefer */
+}
+
+.image-list {
+  text-align: center;
+}
+
+
+.fov-map {
+  align-self: center;
+  width: 60%;
+  height: 400px; /* Adjust the height value as needed */
+}
