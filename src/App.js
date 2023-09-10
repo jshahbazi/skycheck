@@ -5,12 +5,12 @@ import Spinner from "./components/Spinner";
 import ImageList from "./components/Images";
 import UploadButton from "./components/Buttons";
 import Footer from "./components/Footer";
-import { r2 } from "./components/r2";
-import FOVMap from "./components/FOVmap"; 
+// import { r2 } from "./components/r2";
+import FOVMap from "./components/FOVMap"; 
 import "./App.css";
 import "leaflet/dist/leaflet.css";
-import { MapContainer, TileLayer, Marker, Polyline, Polygon, Tooltip } from "react-leaflet";
-import L from "leaflet";
+// import { MapContainer, TileLayer, Marker, Polyline, Polygon, Tooltip } from "react-leaflet";
+// import L from "leaflet";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 
