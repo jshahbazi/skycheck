@@ -317,7 +317,7 @@ export default function App() {
   }
 
   function calculateFov(sensorSize, focalLength) {
-    return 2 * toDegrees(Math.atan(sensorSize / (2 * focalLength)) * (180 / Math.PI));
+    return 2 * Math.atan(sensorSize / (2 * focalLength)) * (180 / Math.PI);
   }
 
   const calculateEndpoint = (latitude, longitude, bearing, distance) => {
