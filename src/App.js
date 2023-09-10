@@ -317,7 +317,7 @@ export default function App() {
   }
 
   function calculateFov(sensorSize, focalLength) {
-    return 2 * Math.atan(sensorSize / (2 * focalLength)) * (180 / Math.PI);
+    return 2 * toDegrees(Math.atan(sensorSize / (2 * focalLength)) * (180 / Math.PI));
   }
 
   const calculateEndpoint = (latitude, longitude, bearing, distance) => {
@@ -432,7 +432,10 @@ export default function App() {
         let { Latitude, Longitude, CameraBearing, PixelWidth, PixelHeight, FocalLength, FocalLength35mm } = exifData;
 
         const sensorWidthHeight = estimateSensorSize(PixelWidth, PixelHeight, FocalLength, FocalLength35mm);
+        console.log("sensorWidthHeight[0]: ", sensorWidthHeight[0])
+        console.log("FocalLength: ", FocalLength)
         const calculatedFov = calculateFov(sensorWidthHeight[0], FocalLength);
+        console.log("calculatedFov: ", calculatedFov);
         const [P1, P2] = calculateFovEndpoints(Latitude, Longitude, calculatedFov, 20);
         setPCoords([P1, P2]);
         setFov(calculatedFov);
