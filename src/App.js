@@ -17,7 +17,7 @@ import { v4 as uuidv4 } from "uuid";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { S3Client } from "@aws-sdk/client-s3";
-import Decimal from 'decimal.js';
+
 // import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 // import { faPlane } from "@fortawesome/free-solid-svg-icons";
 
@@ -326,12 +326,14 @@ export default function App() {
 
     const latRad = toRadians(latitude);
     const lonRad = toRadians(longitude);
+    const bearingRad = toRadians(bearing);
 
     console.log("latRad: ", latRad);
     console.log("lonRad: ", lonRad);
+    console.log("bearingRad: ", bearingRad);
 
     const endLatRad = Math.asin(Math.sin(latRad) * Math.cos(dRad) + 
-                                Math.cos(latRad) * Math.sin(dRad) * Math.cos(toRadians(bearing)));
+                                Math.cos(latRad) * Math.sin(dRad) * Math.cos(bearingRad));
     
     const endLonRad = lonRad + Math.atan2(Math.sin(toRadians(bearing)) * Math.sin(dRad) * Math.cos(latRad), 
                                           Math.cos(dRad) - Math.sin(latRad) * Math.sin(endLatRad));
@@ -348,33 +350,33 @@ export default function App() {
     return [endLat, endLon];
   };
   
-  
-
   const calculateEndpoint2 = (latitude, longitude, bearing, distance) => {
-      const R = new Decimal(6371.0);  // Earth's radius in kilometers
-  
-      const dRad = (new Decimal(distance)).div(R);  // Convert distance to angular distance in radians
-      const latRad = toRadians(latitude);
-      const lonRad = toRadians(longitude);
-      const brngRad = toRadians(bearing);
-  
-      const endLatRad = Decimal.asin(
-          (new Decimal(Math.sin(latRad)).times(Decimal.cos(dRad)))
-          .plus(new Decimal(Math.cos(latRad)).times(Decimal.sin(dRad)).times(Math.cos(brngRad)))
-      );
-  
-      const deltaLon = Decimal.atan2(
-          new Decimal(Math.sin(brngRad)).times(Decimal.sin(dRad)).times(new Decimal(Math.cos(latRad))),
-          Decimal.cos(dRad).minus(new Decimal(Math.sin(latRad)).times(new Decimal(Math.sin(endLatRad))))
-      );
-  
-      const endLonRad = new Decimal(lonRad).plus(deltaLon);
-  
-      return [toDegrees(endLatRad.toNumber()), toDegrees(endLonRad.toNumber())];
-  };
-  
-  // Assuming you have the toRadians and toDegrees helper functions defined
-  
+    const R = 6371.0; // Earth's radius in kilometers
+    const d = distance / R; // Convert distance to angular distance in radians
+
+    const scaleFactor = BigInt(1000000000); // Scale factor
+
+    const lat1 = toRadians(latitude);
+    const lon1 = toRadians(longitude);
+    const brng = toRadians(bearing);
+
+    // Convert to BigInt
+    const lat1Scaled = BigInt(lat1 * scaleFactor);
+    const lon1Scaled = BigInt(lon1 * scaleFactor);
+    const dScaled = BigInt(d * scaleFactor);
+    const brngScaled = BigInt(brng * scaleFactor);
+
+    // Calculate new latitude
+    const lat2Scaled = lat1Scaled * Math.cos(Number(dScaled)) + 
+                       (Math.cos(Number(lat1Scaled)) * Math.sin(Number(dScaled)) * Math.cos(Number(brngScaled)));
+    
+    // Calculate new longitude
+    const lon2Scaled = lon1Scaled + 
+                       Math.atan2(Math.sin(Number(brngScaled)) * Math.sin(Number(dScaled)) * Math.cos(Number(lat1Scaled)), 
+                                  Math.cos(Number(dScaled)) - Math.sin(Number(lat1Scaled)) * Math.sin(Number(lat2Scaled)));
+
+    return [Number(lat2Scaled) / scaleFactor, Number(lon2Scaled) / scaleFactor];
+};
 
 
 
