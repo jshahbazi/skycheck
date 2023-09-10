@@ -349,30 +349,30 @@ export default function App() {
     return [endLat, endLon];
   };
 
-  const calculateEndpoint2 = (latitude, longitude, bearing, distance) => {
-    const R = 6371.0; // Earth's radius in kilometers
-    const d = distance / R; // Convert distance to angular distance in radians
+  // const calculateEndpoint2 = (latitude, longitude, bearing, distance) => {
+  //   const R = 6371.0; // Earth's radius in kilometers
+  //   const d = distance / R; // Convert distance to angular distance in radians
 
-    const scaleFactor = BigInt(1000000000); // Scale factor
+  //   const scaleFactor = BigInt(1000000000); // Scale factor
 
-    const lat1 = toRadians(latitude);
-    const lon1 = toRadians(longitude);
-    const brng = toRadians(bearing);
+  //   const lat1 = toRadians(latitude);
+  //   const lon1 = toRadians(longitude);
+  //   const brng = toRadians(bearing);
 
-    // Convert to BigInt
-    const lat1Scaled = BigInt(lat1 * scaleFactor);
-    const lon1Scaled = BigInt(lon1 * scaleFactor);
-    const dScaled = BigInt(d * scaleFactor);
-    const brngScaled = BigInt(brng * scaleFactor);
+  //   // Convert to BigInt
+  //   const lat1Scaled = BigInt(lat1 * scaleFactor);
+  //   const lon1Scaled = BigInt(lon1 * scaleFactor);
+  //   const dScaled = BigInt(d * scaleFactor);
+  //   const brngScaled = BigInt(brng * scaleFactor);
 
-    // Calculate new latitude
-    const lat2Scaled = lat1Scaled * Math.cos(Number(dScaled)) + Math.cos(Number(lat1Scaled)) * Math.sin(Number(dScaled)) * Math.cos(Number(brngScaled));
+  //   // Calculate new latitude
+  //   const lat2Scaled = lat1Scaled * Math.cos(Number(dScaled)) + Math.cos(Number(lat1Scaled)) * Math.sin(Number(dScaled)) * Math.cos(Number(brngScaled));
 
-    // Calculate new longitude
-    const lon2Scaled = lon1Scaled + Math.atan2(Math.sin(Number(brngScaled)) * Math.sin(Number(dScaled)) * Math.cos(Number(lat1Scaled)), Math.cos(Number(dScaled)) - Math.sin(Number(lat1Scaled)) * Math.sin(Number(lat2Scaled)));
+  //   // Calculate new longitude
+  //   const lon2Scaled = lon1Scaled + Math.atan2(Math.sin(Number(brngScaled)) * Math.sin(Number(dScaled)) * Math.cos(Number(lat1Scaled)), Math.cos(Number(dScaled)) - Math.sin(Number(lat1Scaled)) * Math.sin(Number(lat2Scaled)));
 
-    return [Number(lat2Scaled) / scaleFactor, Number(lon2Scaled) / scaleFactor];
-  };
+  //   return [Number(lat2Scaled) / scaleFactor, Number(lon2Scaled) / scaleFactor];
+  // };
 
   const calculateFovEndpoints = (cameraLat, cameraLon, bearing, fov, maxDistance = 20) => {
     console.log("fov: ", fov);
@@ -436,7 +436,7 @@ export default function App() {
         console.log("FocalLength: ", FocalLength)
         const calculatedFov = calculateFov(sensorWidthHeight[0], FocalLength);
         console.log("calculatedFov: ", calculatedFov);
-        const [P1, P2] = calculateFovEndpoints(Latitude, Longitude, calculatedFov, 20);
+        const [P1, P2] = calculateFovEndpoints(Latitude, Longitude, CameraBearing, calculatedFov, 20);
         setPCoords([P1, P2]);
         setFov(calculatedFov);
         setBearing(CameraBearing);
