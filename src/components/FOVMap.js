@@ -1,89 +1,125 @@
-import React from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, Polygon, Tooltip, useMap } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-// const planeIcon = () => <FontAwesomeIcon icon={faPlane} />;
+import React from "react";
+import { useRef, useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Polyline, Polygon, Popup, Tooltip, useMap } from "react-leaflet";
+import { faPlane } from "@fortawesome/free-solid-svg-icons";
+import "leaflet/dist/leaflet.css";
+import iconUrl from "./plane-solid.svg";
+import "leaflet-rotatedmarker";
+const planeIcon = () => <FontAwesomeIcon icon={faPlane} />;
 
+import L from "leaflet";
+// import { Marker, Polyline } from 'react-leaflet';
 
+const AircraftIcon = new L.Icon({
+  iconUrl: iconUrl, // Change this to the path of your icon
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+});
 
+const iconDefaultBearing = 90;
 
+const toRadians = (degree) => {
+  return degree * (Math.PI / 180);
+};
 
+const toDegrees = (radians) => {
+  return radians * (180 / Math.PI);
+};
 
-const FOVMap = ({ cameraLat, cameraLon, P1, P2 }) => {
-  const center = [cameraLat, cameraLon];
-//   const cameraIcon = L.icon({
-//     iconUrl: 'path/to/icon.png', // Update this with the path to your custom icon if needed
-//     iconSize: [25, 41],
-//     iconAnchor: [12, 41],
-  //   });
-  
-  // [camera_latitude, camera_longitude], P1, P2
+const calculateFuturePosition = (lat, lon, bearing, velocity, timeInSeconds = 1) => {
+  const R = 6371.0; // Earth radius in kilometers
 
-  const addBoundingBox = (map, point1, point2, point3, bufferRatio = 0.1) => {
-    // Extract latitudes and longitudes from points
-    const lats = [point1[0], point2[0], point3[0]];
-    const lons = [point1[1], point2[1], point3[1]];
-    
-    // Find min and max for latitudes and longitudes
-    const minLat = Math.min(...lats);
-    const maxLat = Math.max(...lats);
-    const minLon = Math.min(...lons);
-    const maxLon = Math.max(...lons);
-    
-    // Calculate the buffer for lat and lon
-    const latBuffer = (maxLat - minLat) * bufferRatio;
-    const lonBuffer = (maxLon - minLon) * bufferRatio;
-    
-    // Adjust the bounding box with the buffer
-    const adjustedMinLat = minLat - latBuffer;
-    const adjustedMaxLat = maxLat + latBuffer;
-    const adjustedMinLon = minLon - lonBuffer;
-    const adjustedMaxLon = maxLon + lonBuffer;
-    
-    const topLeft = [adjustedMaxLat, adjustedMinLon];
-    const bottomRight = [adjustedMinLat, adjustedMaxLon];
+  // Convert distance from m/s to km and multiply by the desired time interval
+  const distance = (velocity * timeInSeconds) / 1000;
 
-    L.rectangle([topLeft, bottomRight], {
+  const delta = distance / R;
+  const theta = toRadians(bearing);
+
+  const phi1 = toRadians(lat);
+  const lambda1 = toRadians(lon);
+
+  const phi2 = phi1 + delta * Math.sin(theta);
+  const lambda2 = lambda1 + (delta * Math.cos(theta)) / Math.cos(phi1);
+
+  return [toDegrees(phi2), toDegrees(lambda2)];
+};
+
+const AircraftComponent = ({ aircraft }) => {
+  const { latitude, longitude, velocity, heading } = aircraft;
+  const [endLat, endLon] = calculateFuturePosition(latitude, longitude, heading, velocity, 60);
+  // console.log("endLat", endLat);
+  // console.log("endLon", endLon);
+
+  return (
+    <>
+      <Marker position={[latitude, longitude]} icon={AircraftIcon} rotationAngle={heading - iconDefaultBearing} >
+      <Popup>
+          Aircraft <br /> Heading: { heading }
+      </Popup>
+    </Marker>
+      {/* <Polyline
+        positions={[
+          [latitude, longitude],
+          [endLat, endLon],
+        ]}
+        color="red"
+        weight={1.5}
+      /> */}
+    </>
+  );
+};
+
+const BoundingBoxComponent = ({ centerPoint, topLeft, bottomRight }) => {
+  const boundingBoxRef = useRef(null);
+  const map = useMap();
+
+  useEffect(() => {
+    if (boundingBoxRef.current) {
+      boundingBoxRef.current.remove();
+    }
+    // const [topLeft, bottomRight] = calculateBox(map, centerPoint, point2, point3);
+    addBoundingBox(map, topLeft, bottomRight);
+  }, [map, centerPoint, topLeft, bottomRight]);
+
+  const addBoundingBox = (map, topLeft, bottomRight) => {
+    // console.log("topLeft", topLeft);
+    // console.log("bottomRight", bottomRight);
+    const polygon = L.rectangle([topLeft, bottomRight], {
       color: "black",
       fill: false,
       weight: 1,
-      text: "Plane data"
+      text: "Plane data",
     }).addTo(map);
-  
-    const bboxCoords = [adjustedMinLat, adjustedMaxLat, adjustedMinLon, adjustedMaxLon];
-    
-    return bboxCoords;
+
+    if (boundingBoxRef.current) {
+      boundingBoxRef.current.remove();
+    }
+    boundingBoxRef.current = polygon;
+    // const bboxCoords = [adjustedMinLat, adjustedMaxLat, adjustedMinLon, adjustedMaxLon];
+    // return bboxCoords;
   };
 
-  function BoundingBoxComponent({ point1, point2, point3 }) {
-    const map = useMap();
-    
-    React.useEffect(() => {
-        addBoundingBox(map, point1, point2, point3);
-    }, [map, point1, point2, point3]);
-  
-    return null;
-  }
+  return null;
+};
 
+const FOVMap = ({ center, pCoords, bbCoords, objectData }) => {
+  const [P1, P2] = pCoords;
+  // console.log("pCoords", pCoords);
+  const [topLeft, bottomRight] = bbCoords;
 
+  console.log("objectData", objectData);
 
   return (
-    <MapContainer center={center} zoom={10} style={{ height: '400px', width: '100%' }}>
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      />
+    <MapContainer center={center} zoom={10} style={{ height: "400px", width: "100%" }}>
+      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
       <Polyline positions={[center, P1]} color="blue" weight={2} />
       <Polyline positions={[center, P2]} color="blue" weight={2} />
-      <Polygon
-        positions={[center, P1, P2]}
-        color="blue"
-        fill={true}
-        weight={0}
-        fillColor="lightskyblue"
-        fillOpacity={0.3}>
+      <Polygon positions={[center, P1, P2]} color="blue" fill={true} weight={0} fillColor="lightskyblue" fillOpacity={0.3}>
         <Tooltip>Camera field of view</Tooltip>
       </Polygon>
-      <BoundingBoxComponent point1={center} point2={P1} point3={P2} />
+      <BoundingBoxComponent centerPoint={center} topLeft={topLeft} bottomRight={bottomRight} />
+
+      {objectData && objectData.map((aircraft, index) => <AircraftComponent key={index} aircraft={aircraft} />)}
     </MapContainer>
   );
 };

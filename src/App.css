@@ -8,9 +8,9 @@ body {
 .container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
   justify-content: space-around;
 }
+
 
 .buttons {
   display: flex;
@@ -227,25 +227,21 @@ footer .small-button.medium {
 
 
 
-
-
-
-/* Update these styles in your App.css */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 20px;
   background-color: #f2f2f2;
-  /* Change background color to white */
+  background-image: url('./image_of_sky.jpg');
+  background-size: cover; /* To cover the entire viewport */
+  background-repeat: no-repeat; /* To prevent the image from repeating */
+  background-position: center center; /* To center the image */  
   color: black;
-  /* Change text color to black */
   font-family: 'Poppins', sans-serif;
-  /* Apply the 'Poppins' font */
   /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);  */
 }
 
-/* Update these styles in your App.css */
 .logo {
   display: flex;
   align-items: center;

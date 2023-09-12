@@ -26,36 +26,99 @@ import heic2any from "heic2any";
 import exifr from "exifr";
 
 const SUPPORTED_FILE_TYPES = ["image/png", "image/jpeg", "image/heic"];
+const USERNAME = "Shahbazian";
+const PASSWORD = "fepci4-pePmyg-sudrac";
+const URL = "https://opensky-network.org/api/states/all";
 
 export default function App() {
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [images, setImages] = useState([]);
 
-  const [mapPosition, setMapPosition] = useState([51.505, -0.09]);
-  const [planes, setPlanes] = useState([]); // assume planes is an array of objects {id, position: [lat, lon]}
+  const [cameraPosition, setCameraPosition] = useState([]);
+  // const [planes, setPlanes] = useState([]); // assume planes is an array of objects {id, position: [lat, lon]}
   const [bearing, setBearing] = useState(0);
   const [fov, setFov] = useState(45); // field of view in degrees
-  const [cameraData, setCameraData] = useState({});
+  // const [cameraData, setCameraData] = useState({});
   const [pCoords, setPCoords] = useState([]);
+  const [bbCoords, setBBCoords] = useState([]);
+  const [boundingBuffer, setBoundingBuffer] = useState(0.1);
+  const [timestamp, setTimestamp] = useState(0);
 
-  // const [file, setFile] = useState<File | undefined>(undefined);
+  const [objectData, setObjectData] = useState([]);
 
-  // Update the map position with GPS coordinates
-  // useEffect(() => {
-  //   // Assume fetchGPS is a function that returns the current GPS position
-  //   // const newPosition = fetchGPS();
-  //   // setMapPosition(newPosition);
-  // }, [/* dependency to determine when to fetch GPS data */]);
+  const fetchAircraftData = async (pCoords, timestamp) => {
+    // if pcoords = 0 then return
+    if (pCoords[0][0] === 0 && pCoords[0][1] === 0 && pCoords[1][0] === 0 && pCoords[1][1] === 0) {
+      return [];
+    }
+    const [P1, P2] = pCoords;
+    const [lat1, lon1] = P1;
+    const [lat2, lon2] = P2;
+    const lamin = Math.min(lat1, lat2);
+    const lomin = Math.min(lon1, lon2);
+    const lamax = Math.max(lat1, lat2);
+    const lomax = Math.max(lon1, lon2);
 
-  // useEffect(() => {
-  //   fetch(`${API_URL}/wake-up`)
-  //     .then(res => {
-  //       if (res.ok) {
-  //         setLoading(false);
-  //       }
-  //     });
-  // }, []);
+    const params = {
+      time: timestamp,
+      lamin: lamin,
+      lomin: lomin,
+      lamax: lamax,
+      lomax: lomax,
+    };
+
+    const response = await axios.get(URL, {
+      auth: {
+        username: USERNAME,
+        password: PASSWORD,
+      },
+      params: params,
+    });
+
+    console.log("response.data: ", response.data);
+
+    return response.data;
+  };
+
+
+  async function increaseBoundingBuffer() {
+    const newBoundingBuffer = boundingBuffer + 0.1;
+    const [P1, P2] = pCoords;
+    const [topLeft, bottomRight] = calculateBox(cameraPosition, P1, P2, newBoundingBuffer);
+    const newBBCoords = [topLeft, bottomRight]
+    setBBCoords(newBBCoords);
+    setBoundingBuffer(newBoundingBuffer);
+    setObjectData([]);
+    try {
+      await updateAircraftData(newBBCoords, timestamp);
+    } catch (error) {
+      if ("response" in error && error.response.status === 400 && error.response.data.includes("Historical data more than 1 hour ago")) {
+        toast.error("Historical data more than 1 hour ago is not available.");
+      } else {
+        toast.error("Error: " + error.message);
+      }
+    }
+  }
+
+  async function decreaseBoundingBuffer() {
+    const newBoundingBuffer = boundingBuffer - 0.1;
+    const [P1, P2] = pCoords;
+    const [topLeft, bottomRight] = calculateBox(cameraPosition, P1, P2, newBoundingBuffer);
+    const newBBCoords = [topLeft, bottomRight]
+    setBBCoords(newBBCoords);
+    setBoundingBuffer(newBoundingBuffer);
+    setObjectData([]);
+    try {
+      await updateAircraftData(newBBCoords, timestamp);
+    } catch (error) {
+      if ("response" in error && error.response.status === 400 && error.response.data.includes("Historical data more than 1 hour ago")) {
+        toast.error("Historical data more than 1 hour ago is not available.");
+      } else {
+        toast.error("Error: " + error.message);
+      }
+    }
+  }
 
   async function getSignedUrlForFile(key, bucket, action = "putObject") {
     try {
@@ -119,62 +182,6 @@ export default function App() {
     }
   }
 
-  // async function checkExifData(image) {
-  //   EXIF.getData(image, function () {
-  //     const allMetaData = EXIF.getAllTags(this);
-  //     if (Object.keys(allMetaData).length === 0) {
-  //       console.log("This image doesn't have EXIF data.");
-  //     } else {
-  //       console.log("This image has EXIF data:", allMetaData);
-  //     }
-  //   });
-  // }
-
-  // async function extractExifDataFromBlob(blob) {
-  //   return new Promise((resolve, reject) => {
-  //     const image = new Image();
-  //     // const objectURL = URL.createObjectURL(blob);
-
-  //     image.onload = function () {
-  //       EXIF.getData(image, function () {
-  //         const allMetaData = EXIF.getAllTags(this);
-  //         console.log("allMetaData: ", allMetaData);
-
-  //         if (Object.keys(allMetaData).length === 0) {
-  //           reject(new Error("This image doesn't have EXIF data."));
-  //         } else {
-  //           resolve(allMetaData);
-  //         }
-
-  //         // URL.revokeObjectURL(objectURL);  // Clean up the object URL
-  //       });
-  //     };
-
-  //     image.onerror = function () {
-  //       reject(new Error("Failed to load the image from blob."));
-  //     };
-
-  //     image.src = objectURL;
-  //   });
-  // }
-
-  // async function parseEXIF(file) {
-
-  // }
-
-  //   function convertToBlob(file) {
-  //     const reader = new FileReader();
-
-  //     reader.onload = function(event) {
-  //         const arrayBuffer = event.target.result;
-  //         const blob = new Blob([arrayBuffer], {type: file.type});
-
-  //         // console.log(blob);
-  //       return blob;
-  //     };
-
-  //     reader.readAsArrayBuffer(file);
-  // }
   async function hashImage(file) {
     const arrayBuffer = await file.arrayBuffer();
     const crypto = window.crypto;
@@ -270,7 +277,7 @@ export default function App() {
   async function uploadImage(file, bucket, filePath) {
     let signedUrl = await getSignedUrlForFile(filePath, bucket, "putObject");
     let uploadStatus = await uploadFile(file, signedUrl, "image/jpeg");
-    console.log("uploadStatus: ", uploadStatus);
+    // console.log("uploadStatus: ", uploadStatus);
     signedUrl = await getSignedUrlForFile(filePath, bucket, "getObject");
     return signedUrl;
   }
@@ -281,15 +288,7 @@ export default function App() {
         "Content-Type": "application/json",
       },
     };
-    const result = await axios.post("http://localhost:8788/write_to_r1", dataToSave, options);
-
-    console.log("write_to_r1 result: ", result);
-    console.log("write_to_r1 status: ", result.status);
-    const { action, filePath } = result.data;
-    console.log("write_to_r1 action: ", action);
-    console.log("write_to_r1 filePath: ", filePath);
-
-    console.log("write_to_r1 data: ", result.data);
+    const result = await axios.post("/write_to_r1", dataToSave, options);
     return result.data;
   }
 
@@ -344,6 +343,33 @@ export default function App() {
     return [P1, P2];
   };
 
+  const calculateBox = (centerPoint, point2, point3, boundingBuffer) => {
+    // Extract latitudes and longitudes from points
+    const lats = [centerPoint[0], point2[0], point3[0]];
+    const lons = [centerPoint[1], point2[1], point3[1]];
+
+    // Find min and max for latitudes and longitudes
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLon = Math.min(...lons);
+    const maxLon = Math.max(...lons);
+
+    // Calculate the buffer for lat and lon
+    const latBuffer = (maxLat - minLat) * boundingBuffer;
+    const lonBuffer = (maxLon - minLon) * boundingBuffer;
+
+    // Adjust the bounding box with the buffer
+    const adjustedMinLat = minLat - latBuffer;
+    const adjustedMaxLat = maxLat + latBuffer;
+    const adjustedMinLon = minLon - lonBuffer;
+    const adjustedMaxLon = maxLon + lonBuffer;
+
+    const topLeft = [adjustedMaxLat, adjustedMinLon];
+    const bottomRight = [adjustedMinLat, adjustedMaxLon];
+
+    return [topLeft, bottomRight];
+  };
+
   // Utility functions to convert degrees to radians and vice versa
   const toRadians = (degrees) => {
     return degrees * (Math.PI / 180);
@@ -353,7 +379,40 @@ export default function App() {
     return radians * (180 / Math.PI);
   };
 
+  async function updateAircraftData(bbCoords, timestamp) {
+    // console.log("bbCoords: ", bbCoords);
+    const [bb1, bb2] = bbCoords;
+    const responseData = await fetchAircraftData([bb1, bb2], timestamp);
+    if ("states" in responseData) {
+      responseData.states.forEach((aircraft) => {
+        const [icao24, callsign, origin_country, time_position, last_contact, longitude, latitude, baro_altitude, on_ground, velocity, true_track, vertical_rate, sensors, geo_altitude, squawk, spi, position_source] = aircraft;
+        const heading = true_track;
+        // console.log("aircraft position: ", latitude, longitude);
+        const data = { time_position, longitude, latitude, baro_altitude, on_ground, velocity, heading, vertical_rate, geo_altitude };
+        if (on_ground === false) {
+          setObjectData((prevState) => [...prevState, data]);
+        }
+        // console.log("after set - objectData: ", objectData);
+      });
+    } else {
+      toast.info("No aircraft found in the area.");
+      setObjectData([]);
+    }
+  }
+
+  const resetState = () => {
+    setImages([]);
+    setCameraPosition([]);
+    setBearing(0);
+    setFov(45);
+    setPCoords([]);
+    setBBCoords([]);
+    setObjectData([]);
+    setBoundingBuffer(0.1);
+  };
+
   const onChange = (e) => {
+    resetState();
     const files = Array.from(e.target.files);
 
     if (files.length > 1) {
@@ -366,51 +425,59 @@ export default function App() {
       let exifData = {};
       try {
         exifData = await extractExifData(file);
-        console.log(exifData);
-        // Camera: exif.Make + " " + exif.Model,
-        // DigitalZoomRatio: exif.DigitalZoomRatio || 1.0,
-        // Latitude: exif.latitude,
-        // Longitude: exif.longitude,
-        // CameraBearing: exif.GPSImgDirection,
-        // PixelWidth: exif.ImageWidth || exif.ExifImageWidth,
-        // PixelHeight: exif.ImageHeight || exif.ExifImageHeight,
-        // FocalLength35mm: exif.FocalLengthIn35mmFormat,
-        // FocalLength: exif.FocalLength,
-        // Timestamp: unixTimestamp,
-        // GPSAltitude: exif.GPSAltitude,
-        // GPSHPositioningError: exif.GPSHPositioningError,
-        // GPSSpeed: exif.GPSSpeed,
-        // GPSSpeedRef: exif.GPSSpeedRef,
-        // ExposureTime: exif.ExposureTime,
-        // ShutterSpeedValue: exif.ShutterSpeedValue,
-
-        let { Latitude, Longitude, CameraBearing, PixelWidth, PixelHeight, FocalLength, FocalLength35mm } = exifData;
-
-        const sensorWidthHeight = estimateSensorSize(PixelWidth, PixelHeight, FocalLength, FocalLength35mm);
-        // console.log("sensorWidthHeight[0]: ", sensorWidthHeight[0])
-        // console.log("FocalLength: ", FocalLength)
-        const calculatedFov = calculateFov(sensorWidthHeight[0], FocalLength);
-        // console.log("calculatedFov: ", calculatedFov);
-        const [P1, P2] = calculateFovEndpoints(Latitude, Longitude, CameraBearing, calculatedFov, 20);
-        setPCoords([P1, P2]);
-        setFov(calculatedFov);
-        setBearing(CameraBearing);
-        setMapPosition([Latitude, Longitude]);
-
-        // console.log("calculatedFov: ", calculatedFov);
-        // console.log("cameraBearing: ", CameraBearing);
-        // console.log("mapPosition: ", [Latitude, Longitude]);
-        // console.log("P1, P2: ", P1, P2);
-
-        // let cameraData = { Latitude, Longitude, CameraBearing };
-
-        // setCameraData((prevState) => ({ ...prevState, name: "newName" }));
       } catch (error) {
         console.error(error.message);
         toast.error("Error: " + error.message, { autoClose: 2000 });
         setUploading(false);
         return;
       }
+      // console.log(exifData);
+      // Camera: exif.Make + " " + exif.Model,
+      // DigitalZoomRatio: exif.DigitalZoomRatio || 1.0,
+      // Latitude: exif.latitude,
+      // Longitude: exif.longitude,
+      // CameraBearing: exif.GPSImgDirection,
+      // PixelWidth: exif.ImageWidth || exif.ExifImageWidth,
+      // PixelHeight: exif.ImageHeight || exif.ExifImageHeight,
+      // FocalLength35mm: exif.FocalLengthIn35mmFormat,
+      // FocalLength: exif.FocalLength,
+      // Timestamp: unixTimestamp,
+      // GPSAltitude: exif.GPSAltitude,
+      // GPSHPositioningError: exif.GPSHPositioningError,
+      // GPSSpeed: exif.GPSSpeed,
+      // GPSSpeedRef: exif.GPSSpeedRef,
+      // ExposureTime: exif.ExposureTime,
+      // ShutterSpeedValue: exif.ShutterSpeedValue,
+
+      const { Latitude, Longitude, CameraBearing, PixelWidth, PixelHeight, FocalLength, FocalLength35mm, Timestamp } = exifData;
+      // console.log("Latitude: ", Latitude);
+      // console.log("Longitude: ", Longitude);
+      // console.log("CameraBearing: ", CameraBearing);
+      const sensorWidthHeight = estimateSensorSize(PixelWidth, PixelHeight, FocalLength, FocalLength35mm);
+      const calculatedFov = calculateFov(sensorWidthHeight[0], FocalLength);
+      // console.log("calculatedFov: ", calculatedFov);
+      const [P1, P2] = calculateFovEndpoints(Latitude, Longitude, CameraBearing, calculatedFov, 20);
+      const startingBoundingBuffer = 0.1;
+      const [topLeft, bottomRight] = calculateBox([Latitude, Longitude], P1, P2, startingBoundingBuffer);
+
+      setFov(calculatedFov);
+      setPCoords([P1, P2]);
+      setCameraPosition([Latitude, Longitude]);
+      setBearing(CameraBearing);
+      setTimestamp(Timestamp);
+      setBBCoords([topLeft, bottomRight]);
+
+      try {
+        await updateAircraftData([topLeft, bottomRight], Timestamp);
+      } catch (error) {
+        // console.error("Error:", error.message);
+        if ("response" in error && error.response.status === 400 && error.response.data.includes("Historical data more than 1 hour ago")) {
+          toast.error("Historical data more than 1 hour ago is not available.");
+        } else {
+          toast.error("Error: " + error.message);
+        }
+      }
+      setUploading(false);
 
       let { convertedFile, mimeType, fileExtension } = await convertHEICToAny(file, "image/jpeg", 1.0);
 
@@ -462,6 +529,33 @@ export default function App() {
     toast.error("Failed to load the image.");
   };
 
+  const PlaneIcon = () => (
+    // <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" width="24" height="24">
+    //   <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+    // </svg>
+
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" width="32" height="32">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+    </svg>
+  );
+
+  const mainText = () => {
+    return (
+      // Check the sky for aircraft and other objects. Upload original photos that contain GPS data and we will analyze them for you.
+      <div>
+        <h1>Check the sky for aircraft and other objects</h1>
+        <p>Upload original photos that contain GPS data and we will analyze them for you</p>
+        <ul><li>Due to aircraft API restrictions, we can only look back one hour, so upload the photo ASAP</li></ul>
+        <p>Aircraft on the ground are filtered out</p>
+        <p>Currently only supports JPEG, PNG, and HEIC files</p>
+        <p>Note that the exact GPS data in your photo may be off due to surroundings</p>
+        <p>The Field-Of-View is taken from the camera bearing, but that is dependent on GPS and the internal gyroscope so it could be dramatically off</p>
+        <p>We do not store any identifying data</p>
+      </div>
+    );
+  };
+
+  // const { latitude, longitude, velocity, heading } = aircraft;
   const content = () => {
     switch (true) {
       case uploading:
@@ -473,7 +567,10 @@ export default function App() {
               <ImageList images={images} removeImage={removeImage} onError={onImagesError} />
             </div>
             <div className="fov-map">
-              <FOVMap cameraLat={mapPosition[0]} cameraLon={mapPosition[1]} P1={pCoords[0]} P2={pCoords[1]} />
+              <FOVMap center={cameraPosition} pCoords={pCoords} bbCoords={bbCoords} objectData={objectData} />
+              Bounding Box Size:&nbsp;
+              <button onClick={increaseBoundingBuffer}>+</button>
+              <button onClick={decreaseBoundingBuffer}>-</button>
             </div>
           </div>
         );
@@ -489,7 +586,11 @@ export default function App() {
   return (
     <div className="container">
       <header className="header">
-        <div className="logo">SkyCheck</div>
+        <div className="logo">
+          {" "}
+          <PlaneIcon />
+          SkyCheck
+        </div>
         <nav className="menu">
           <ul>
             <li>
@@ -506,8 +607,9 @@ export default function App() {
           </ul>
         </nav>
       </header>
+
       <ToastContainer />
-      <div className="other-text">Check the sky for aircraft and other objects. Upload original photos that contain GPS data and we will analyze them for you.</div>
+      <div className="other-text">{mainText()}</div>
 
       {/* <UploadButton onChange={onChange} /> */}
       <div className="buttons">{content()}</div>
