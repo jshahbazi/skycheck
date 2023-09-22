@@ -412,6 +412,7 @@ export default function App() {
         const heading = true_track;
         // console.log("aircraft position: ", latitude, longitude);
         const data = { time_position, longitude, latitude, baro_altitude, on_ground, velocity, heading, vertical_rate, geo_altitude };
+        console.log("aircraft data sent to get_aircraft: ", data);
         if (on_ground === false) {
           // const aircraftInfo = await fetchAircraftInfo(icao24);
           const { manufacturername, model} = await retrieveAircraftInfo(icao24);
