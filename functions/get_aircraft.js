@@ -1,10 +1,7 @@
-export const onRequestGet = async ({ request, env, context }) => {
-    console.log("request", request);
-    console.log("env", env);
-    console.log("context", context);
+export const onRequestGet = async (context) => {
     const icao24 = context.params.icao24;
   
-    const d1_response = await env.SKYCHECK_DB.prepare("SELECT * FROM aircraft WHERE icao24 = ?").bind(icao24).run();
+    const d1_response = await context.env.SKYCHECK_DB.prepare("SELECT * FROM aircraft WHERE icao24 = ?").bind(icao24).run();
 
     let response = null;
     if (d1_response.meta.rows_read === 0) {
@@ -17,6 +14,4 @@ export const onRequestGet = async ({ request, env, context }) => {
     }
     return response;  
     
-  
   };
-  
