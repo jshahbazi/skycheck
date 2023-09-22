@@ -76,7 +76,7 @@ export default function App() {
       params: params,
     });
 
-    console.log("get aircraft in area: ", response.data);
+    // console.log("get aircraft in area: ", response.data);
 
     return response.data;
   };
