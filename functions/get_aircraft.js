@@ -1,4 +1,6 @@
 export const onRequestGet = async (context) => {
+    console.log("get_aircraft.js onRequestGet context: ", context);
+    console.log("get_aircraft.js onRequestGet context: ", JSON.stringify(context));
     const icao24 = context.params.icao24;
     console.log("icao24", icao24);
     console.log("params", context.params);
