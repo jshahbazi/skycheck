@@ -392,15 +392,16 @@ export default function App() {
 
 
   async function retrieveAircraftInfo(icao24) {
-    const options = {
-      params: {
-        icao24: icao24,
-      },
-      headers: {
-        "Content-Type": "application/json",
-      },
-    };
-    const result = await axios.get("/get_aircraft", options);
+    console.log("retrieve this icao24: ", icao24);
+    // const options = {
+    //   params: {
+    //     icao24: icao24,
+    //   },
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    // };
+    const result = await axios.get("/get_aircraft", {params: {icao24: icao24}});
     return result.data;
     // const { manufacturername, model} = await retrieveAircraftInfo(icao24);
   }
