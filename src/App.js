@@ -44,7 +44,7 @@ export default function App() {
   const [bbCoords, setBBCoords] = useState([]);
   const [boundingBuffer, setBoundingBuffer] = useState(0.1);
   const [timestamp, setTimestamp] = useState(0);
-
+  const [status, setStatus] = useState("");
   const [objectData, setObjectData] = useState([]);
 
   const fetchAircraftData = async (pCoords, timestamp) => {
@@ -106,6 +106,7 @@ export default function App() {
     } catch (error) {
       if ("response" in error && error.response.status === 400 && error.response.data.includes("Historical data more than 1 hour ago")) {
         toast.error("Historical data more than 1 hour ago is not available.");
+        setStatus("Error: Historical data more than 1 hour ago is not available.");
       } else {
         toast.error("Error: " + error.message);
       }
@@ -125,8 +126,10 @@ export default function App() {
     } catch (error) {
       if ("response" in error && error.response.status === 400 && error.response.data.includes("Historical data more than 1 hour ago")) {
         toast.error("Historical data more than 1 hour ago is not available.");
+        setStatus("Error: Historical data more than 1 hour ago is not available.");
       } else {
         toast.error("Error: " + error.message);
+
       }
     }
   }
@@ -205,16 +208,19 @@ export default function App() {
   async function extractExifData(file) {
     if (file.type === "") {
       toast.error(`Unknown file type`);
+      setStatus("Unknown file type");
       throw new Error("Unknown file type");
     }
 
     if (SUPPORTED_FILE_TYPES.every((type) => file.type !== type)) {
       toast.error(`'${file.type}' is not a supported format`);
+      setStatus(`'${file.type}' is not a supported format`);
       throw new Error(`'${file.type}' is not a supported format`);
     }
 
     if (file.size > 150000000) {
       toast.error(`'${file.name}' is too large, please pick a smaller file`);
+      setStatus(`'${file.name}' is too large, please pick a smaller file`);
       throw new Error(`'${file.name}' is too large, please pick a smaller file`);
     }
 
@@ -245,6 +251,7 @@ export default function App() {
       return exifData;
     } else {
       toast.error("No EXIF data found.");
+      setStatus("No EXIF data found.");
       throw new Error("No EXIF data found.");
     }
   }
@@ -273,6 +280,7 @@ export default function App() {
 
     if (file.type === "image/heic") {
       toast.info("Converting image to jpeg...", { autoClose: 3000 });
+      setStatus("Converting image to jpeg...")
       const convertedFile = await heic2any({
         blob: file,
         toType: toType,
@@ -309,9 +317,11 @@ export default function App() {
 
     if (action === "add") {
       toast.info("Uploading image...", { autoClose: 2000 });
+      setStatus("Uploading image...")
       signedUrl = await uploadImage(file, imageData.bucket, filePath);
     } else if (action === "retrieve") {
       toast.info("Image already exists. Retrieving...", { autoClose: 2000 });
+      setStatus("Image already exists. Retrieving...")
       signedUrl = await getSignedUrlForFile(filePath, imageData.bucket, "getObject");
     }
     return signedUrl;
@@ -392,7 +402,7 @@ export default function App() {
 
 
   async function retrieveAircraftInfo(icao24) {
-    console.log("retrieve this icao24: ", icao24);
+    // console.log("retrieve this icao24: ", icao24);
     const options = {
       headers: {
         "Content-Type": "application/json",
@@ -412,7 +422,7 @@ export default function App() {
         const heading = true_track;
         // console.log("aircraft position: ", latitude, longitude);
         const data = { icao24, time_position, longitude, latitude, baro_altitude, on_ground, velocity, heading, vertical_rate, geo_altitude };
-        console.log("aircraft data sent to get_aircraft: ", data);
+        // console.log("aircraft data sent to get_aircraft: ", data);
         if (on_ground === false) {
           // const aircraftInfo = await fetchAircraftInfo(icao24);
           const { manufacturername, model} = await retrieveAircraftInfo(data.icao24);
@@ -421,9 +431,9 @@ export default function App() {
           data.model = model;
           // data.registration = aircraftInfo.registration;
           // console.log("aircraftInfo: ", aircraftInfo);  
-          console.log("aircraft data: ", data);
+          // console.log("aircraft data: ", data);
           setObjectData((prevState) => [...prevState, data]);
-          console.log("objectData after being set: ", objectData);
+          // console.log("objectData after being set: ", objectData);
         }
 
 
@@ -431,6 +441,7 @@ export default function App() {
       });
     } else {
       toast.info("No aircraft found in the area.");
+      setStatus("No aircraft found in the area.");
       setObjectData([]);
     }
   }
@@ -581,11 +592,22 @@ export default function App() {
         <h1>Check the sky for aircraft and other objects</h1>
         <p>Upload original photos that contain GPS data and we will analyze them for you</p>
         <ul><li>Due to aircraft API restrictions, we can only look back one hour, so upload the photo ASAP</li></ul>
+        <p>We do not store any identifying data</p>        
+      </div>
+    );
+  };
+
+  const bottomText = () => {
+    return (
+      // Check the sky for aircraft and other objects. Upload original photos that contain GPS data and we will analyze them for you.
+      <div>
+        <h1>Notes:</h1>
         <p>Aircraft on the ground are filtered out</p>
         <p>Currently only supports JPEG, PNG, and HEIC files</p>
         <p>Note that the exact GPS data in your photo may be off due to surroundings</p>
-        <p>The Field-Of-View is taken from the camera bearing, but that is dependent on GPS and the internal gyroscope so it could be dramatically off</p>
-        <p>We do not store any identifying data</p>
+        <p>The Field-Of-View can be *VERY* off due to GPS/gyro stuff not getting the correct readings</p>
+        <p>Try to keep the camera steady for a moment before snapping a picture, otherwise just increase the bounding box if it's cutting anything off</p>
+
       </div>
     );
   };
@@ -647,8 +669,9 @@ export default function App() {
       <div className="other-text">{mainText()}</div>
 
       {/* <UploadButton onChange={onChange} /> */}
+      <div className="buttons">Status:{ status }</div>
       <div className="buttons">{content()}</div>
-
+      <div className="other-text">{bottomText()}</div>
       <Footer />
     </div>
   );
