@@ -411,11 +411,11 @@ export default function App() {
         const [icao24, callsign, origin_country, time_position, last_contact, longitude, latitude, baro_altitude, on_ground, velocity, true_track, vertical_rate, sensors, geo_altitude, squawk, spi, position_source] = aircraft;
         const heading = true_track;
         // console.log("aircraft position: ", latitude, longitude);
-        const data = { time_position, longitude, latitude, baro_altitude, on_ground, velocity, heading, vertical_rate, geo_altitude };
+        const data = { icao24, time_position, longitude, latitude, baro_altitude, on_ground, velocity, heading, vertical_rate, geo_altitude };
         console.log("aircraft data sent to get_aircraft: ", data);
         if (on_ground === false) {
           // const aircraftInfo = await fetchAircraftInfo(icao24);
-          const { manufacturername, model} = await retrieveAircraftInfo(icao24);
+          const { manufacturername, model} = await retrieveAircraftInfo(data.icao24);
           // combine data and aircraftInfo
           data.manufacturerName = manufacturername;
           data.model = model;
