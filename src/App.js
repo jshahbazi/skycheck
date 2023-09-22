@@ -7,7 +7,7 @@ import UploadButton from "./components/Buttons";
 import Footer from "./components/Footer";
 // import { r2 } from "./components/r2";
 import FOVMap from "./components/FOVMap";
-import "./App.css";
+import "./styles/App.css";
 import "leaflet/dist/leaflet.css";
 // import { MapContainer, TileLayer, Marker, Polyline, Polygon, Tooltip } from "react-leaflet";
 // import L from "leaflet";
@@ -80,6 +80,17 @@ export default function App() {
 
     return response.data;
   };
+
+  async function fetchAircraftInfo(icao24) {
+    const URL = `https://opensky-network.org/api/metadata/aircraft/icao/${icao24}`;
+    const response = await axios.get(URL, {
+      auth: {
+        username: USERNAME,
+        password: PASSWORD,
+      },
+    });
+    return response.data;
+  }
 
 
   async function increaseBoundingBuffer() {
@@ -379,20 +390,41 @@ export default function App() {
     return radians * (180 / Math.PI);
   };
 
+
+  async function retrieveAircraftInfo(icao24) {
+    const options = {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+    const result = await axios.post("/get_aircraft", icao24, options);
+    return result.data;
+    // const { manufacturername, model} = await retrieveAircraftInfo(icao24);
+  }
+
   async function updateAircraftData(bbCoords, timestamp) {
     // console.log("bbCoords: ", bbCoords);
     const [bb1, bb2] = bbCoords;
     const responseData = await fetchAircraftData([bb1, bb2], timestamp);
     if ("states" in responseData) {
-      responseData.states.forEach((aircraft) => {
+      responseData.states.forEach(async (aircraft) => {
         const [icao24, callsign, origin_country, time_position, last_contact, longitude, latitude, baro_altitude, on_ground, velocity, true_track, vertical_rate, sensors, geo_altitude, squawk, spi, position_source] = aircraft;
         const heading = true_track;
         // console.log("aircraft position: ", latitude, longitude);
         const data = { time_position, longitude, latitude, baro_altitude, on_ground, velocity, heading, vertical_rate, geo_altitude };
         if (on_ground === false) {
+          // const aircraftInfo = await fetchAircraftInfo(icao24);
+          const { manufacturername, model} = await retrieveAircraftInfo(icao24);
+          // combine data and aircraftInfo
+          data.manufacturerName = manufacturername;
+          data.model = model;
+          // data.registration = aircraftInfo.registration;
+          // console.log("aircraftInfo: ", aircraftInfo);          
           setObjectData((prevState) => [...prevState, data]);
         }
-        // console.log("after set - objectData: ", objectData);
+
+
+
       });
     } else {
       toast.info("No aircraft found in the area.");

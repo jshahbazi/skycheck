@@ -44,19 +44,20 @@ const calculateFuturePosition = (lat, lon, bearing, velocity, timeInSeconds = 1)
   return [toDegrees(phi2), toDegrees(lambda2)];
 };
 
+
 const AircraftComponent = ({ aircraft }) => {
-  const { latitude, longitude, velocity, heading } = aircraft;
+  const { latitude, longitude, velocity, heading, manufacturerName, model } = aircraft;
   const [endLat, endLon] = calculateFuturePosition(latitude, longitude, heading, velocity, 60);
   // console.log("endLat", endLat);
   // console.log("endLon", endLon);
 
   return (
     <>
-      <Marker position={[latitude, longitude]} icon={AircraftIcon} rotationAngle={heading - iconDefaultBearing} >
-      <Popup>
-          Aircraft <br /> Heading: { heading }
-      </Popup>
-    </Marker>
+      <Marker position={[latitude, longitude]} icon={AircraftIcon} rotationAngle={heading - iconDefaultBearing}>
+        <Popup>
+          {manufacturerName} {model} <br /> Heading: {heading} <br /> Velocity: {velocity} 
+        </Popup>
+      </Marker>
       {/* <Polyline
         positions={[
           [latitude, longitude],
