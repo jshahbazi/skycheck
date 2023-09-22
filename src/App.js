@@ -669,7 +669,7 @@ export default function App() {
       <div className="other-text">{mainText()}</div>
 
       {/* <UploadButton onChange={onChange} /> */}
-      <div className="buttons">Status:{ status }</div>
+      {/* <div className="buttons">Status:{ status }</div> */}
       <div className="buttons">{content()}</div>
       <div className="other-text">{bottomText()}</div>
       <Footer />

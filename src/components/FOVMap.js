@@ -44,9 +44,8 @@ const calculateFuturePosition = (lat, lon, bearing, velocity, timeInSeconds = 1)
   return [toDegrees(phi2), toDegrees(lambda2)];
 };
 
-
 const AircraftComponent = ({ aircraft }) => {
-  const { latitude, longitude, velocity, heading, manufacturerName, model } = aircraft;
+  const { icao24, latitude, longitude, velocity, heading, manufacturerName, model } = aircraft;
   const [endLat, endLon] = calculateFuturePosition(latitude, longitude, heading, velocity, 60);
   // console.log("endLat", endLat);
   // console.log("endLon", endLon);
@@ -55,7 +54,10 @@ const AircraftComponent = ({ aircraft }) => {
     <>
       <Marker position={[latitude, longitude]} icon={AircraftIcon} rotationAngle={heading - iconDefaultBearing}>
         <Popup>
-          {manufacturerName} {model} <br /> Heading: {heading} <br /> Velocity: {velocity} 
+          {manufacturerName ? manufacturerName : "Unknown Manufacturer"} {model} <br />
+          ICAO24: {icao24} <br />
+          Heading: {heading} <br />
+          Velocity: {velocity}
         </Popup>
       </Marker>
       {/* <Polyline

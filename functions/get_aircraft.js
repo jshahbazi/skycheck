@@ -1,8 +1,8 @@
 export const onRequestPost = async (context) => {
-    console.log("get_aircraft.js onRequestGet context: ", context);
+    // console.log("get_aircraft.js onRequestGet context: ", context);
     const icao24 = await context.request.json();
     // const icao24 = context.params.icao24;
-    console.log("icao24", icao24);
+    // console.log("icao24", icao24);
   
     const d1_response = await context.env.SKYCHECK_DB.prepare("SELECT * FROM aircraft WHERE icao24 = ?").bind(icao24).run();
 
