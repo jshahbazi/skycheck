@@ -76,7 +76,7 @@ export default function App() {
       params: params,
     });
 
-    console.log("response.data: ", response.data);
+    console.log("get aircraft in area: ", response.data);
 
     return response.data;
   };
@@ -419,8 +419,10 @@ export default function App() {
           data.manufacturerName = manufacturername;
           data.model = model;
           // data.registration = aircraftInfo.registration;
-          // console.log("aircraftInfo: ", aircraftInfo);          
+          // console.log("aircraftInfo: ", aircraftInfo);  
+          console.log("aircraft data: ", data);
           setObjectData((prevState) => [...prevState, data]);
+          console.log("objectData after being set: ", objectData);
         }
 
 

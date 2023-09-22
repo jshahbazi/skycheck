@@ -108,7 +108,7 @@ const FOVMap = ({ center, pCoords, bbCoords, objectData }) => {
   // console.log("pCoords", pCoords);
   const [topLeft, bottomRight] = bbCoords;
 
-  console.log("objectData", objectData);
+  console.log("objectData passed to FOVMap component:", objectData);
 
   return (
     <MapContainer center={center} zoom={10} style={{ height: "400px", width: "100%" }}>
