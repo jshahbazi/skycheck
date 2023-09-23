@@ -250,6 +250,7 @@ export default function App() {
       };
       return exifData;
     } else {
+      console.log("No EXIF data found.")
       toast.error("No EXIF data found.");
       setStatus("No EXIF data found.");
       throw new Error("No EXIF data found.");
@@ -469,14 +470,14 @@ export default function App() {
       setUploading(true);
 
       let exifData = {};
-      try {
+      // try {
         exifData = await extractExifData(file);
-      } catch (error) {
-        console.error(error.message);
-        toast.error("Error: " + error.message, { autoClose: 2000 });
-        setUploading(false);
-        return;
-      }
+      // } catch (error) {
+      //   console.error(error.message);
+      //   toast.error("Error: " + error.message, { autoClose: 2000 });
+      //   setUploading(false);
+      //   return;
+      // }
       // console.log(exifData);
       // Camera: exif.Make + " " + exif.Model,
       // DigitalZoomRatio: exif.DigitalZoomRatio || 1.0,
@@ -496,8 +497,8 @@ export default function App() {
       // ShutterSpeedValue: exif.ShutterSpeedValue,
 
       const { Latitude, Longitude, CameraBearing, PixelWidth, PixelHeight, FocalLength, FocalLength35mm, Timestamp } = exifData;
-      // console.log("Latitude: ", Latitude);
-      // console.log("Longitude: ", Longitude);
+      console.log("Latitude: ", Latitude);
+      console.log("Longitude: ", Longitude);
       // console.log("CameraBearing: ", CameraBearing);
       const sensorWidthHeight = estimateSensorSize(PixelWidth, PixelHeight, FocalLength, FocalLength35mm);
       const calculatedFov = calculateFov(sensorWidthHeight[0], FocalLength);
