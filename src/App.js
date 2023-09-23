@@ -471,7 +471,11 @@ export default function App() {
 
       let exifData = {};
       // try {
-        exifData = await extractExifData(file);
+      exifData = await extractExifData(file);
+      if (exifData === null) {
+        setUploading(false);
+        return;
+      }
       // } catch (error) {
       //   console.error(error.message);
       //   toast.error("Error: " + error.message, { autoClose: 2000 });
