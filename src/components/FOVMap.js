@@ -46,7 +46,7 @@ const calculateFuturePosition = (lat, lon, bearing, velocity, timeInSeconds = 1)
 
 const AircraftComponent = ({ aircraft }) => {
   const { icao24, latitude, longitude, velocity, heading, manufacturerName, model } = aircraft;
-  const [endLat, endLon] = calculateFuturePosition(latitude, longitude, heading, velocity, 60);
+  // const [endLat, endLon] = calculateFuturePosition(latitude, longitude, heading, velocity, 60);
   // console.log("endLat", endLat);
   // console.log("endLon", endLon);
 
@@ -110,7 +110,7 @@ const FOVMap = ({ center, pCoords, bbCoords, objectData }) => {
   // console.log("pCoords", pCoords);
   const [topLeft, bottomRight] = bbCoords;
 
-  console.log("objectData passed to FOVMap component:", objectData);
+  // console.log("objectData passed to FOVMap component:", objectData);
 
   return (
     <MapContainer center={center} zoom={10} style={{ height: "400px", width: "100%" }}>
