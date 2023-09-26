@@ -234,6 +234,7 @@ export default function App() {
       if (exif.latitude === NaN || exif.longitude === NaN) {
         toast.error("No GPS data found.");
         setStatus("No GPS data found.");
+        console.log("No GPS data found.");
         throw new Error("No GPS data found.");
       }
 
@@ -481,6 +482,7 @@ export default function App() {
       try {
         exifData = await extractExifData(file);    
       } catch (error) {
+        console.log("caught error")
         // console.error(error.message);
         // toast.error("Error: " + error.message, { autoClose: 2000 });
         setUploading(false);
