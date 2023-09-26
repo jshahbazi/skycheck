@@ -231,7 +231,7 @@ export default function App() {
       const unixTimestamp = Math.floor(dateObj.getTime() / 1000);
 
       // if exif.Latitude and exif.Longitude are null then return
-      if (exif.latitude === null || exif.longitude === null) {
+      if (exif.latitude === NaN || exif.longitude === NaN) {
         toast.error("No GPS data found.");
         setStatus("No GPS data found.");
         throw new Error("No GPS data found.");
