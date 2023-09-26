@@ -230,12 +230,20 @@ export default function App() {
       const dateObj = new Date(exifDateTimeStr);
       const unixTimestamp = Math.floor(dateObj.getTime() / 1000);
 
+      // if exif.Latitude and exif.Longitude are null then return
+      if (exif.latitude === null || exif.longitude === null) {
+        toast.error("No GPS data found.");
+        setStatus("No GPS data found.");
+        throw new Error("No GPS data found.");
+      }
+
+
       const exifData = {
         Camera: exif.Make + " " + exif.Model,
         DigitalZoomRatio: exif.DigitalZoomRatio || 1.0,
-        Latitude: exif.latitude,
-        Longitude: exif.longitude,
-        CameraBearing: exif.GPSImgDirection,
+        Latitude: exif.latitude || null,
+        Longitude: exif.longitude || null,
+        CameraBearing: exif.GPSImgDirection || null,
         PixelWidth: exif.ImageWidth || exif.ExifImageWidth,
         PixelHeight: exif.ImageHeight || exif.ExifImageHeight,
         FocalLength35mm: exif.FocalLengthIn35mmFormat,
@@ -470,43 +478,19 @@ export default function App() {
       setUploading(true);
 
       let exifData = {};
-      // try {
-      exifData = await extractExifData(file);
-      if (exifData === null) {
+      try {
+        exifData = await extractExifData(file);    
+      } catch (error) {
+        // console.error(error.message);
+        // toast.error("Error: " + error.message, { autoClose: 2000 });
         setUploading(false);
         return;
       }
-      // } catch (error) {
-      //   console.error(error.message);
-      //   toast.error("Error: " + error.message, { autoClose: 2000 });
-      //   setUploading(false);
-      //   return;
-      // }
-      // console.log(exifData);
-      // Camera: exif.Make + " " + exif.Model,
-      // DigitalZoomRatio: exif.DigitalZoomRatio || 1.0,
-      // Latitude: exif.latitude,
-      // Longitude: exif.longitude,
-      // CameraBearing: exif.GPSImgDirection,
-      // PixelWidth: exif.ImageWidth || exif.ExifImageWidth,
-      // PixelHeight: exif.ImageHeight || exif.ExifImageHeight,
-      // FocalLength35mm: exif.FocalLengthIn35mmFormat,
-      // FocalLength: exif.FocalLength,
-      // Timestamp: unixTimestamp,
-      // GPSAltitude: exif.GPSAltitude,
-      // GPSHPositioningError: exif.GPSHPositioningError,
-      // GPSSpeed: exif.GPSSpeed,
-      // GPSSpeedRef: exif.GPSSpeedRef,
-      // ExposureTime: exif.ExposureTime,
-      // ShutterSpeedValue: exif.ShutterSpeedValue,
-
       const { Latitude, Longitude, CameraBearing, PixelWidth, PixelHeight, FocalLength, FocalLength35mm, Timestamp } = exifData;
       console.log("Latitude: ", Latitude);
-      console.log("Longitude: ", Longitude);
-      // console.log("CameraBearing: ", CameraBearing);
+      console.log("Longitude: ", Longitude);        
       const sensorWidthHeight = estimateSensorSize(PixelWidth, PixelHeight, FocalLength, FocalLength35mm);
       const calculatedFov = calculateFov(sensorWidthHeight[0], FocalLength);
-      // console.log("calculatedFov: ", calculatedFov);
       const [P1, P2] = calculateFovEndpoints(Latitude, Longitude, CameraBearing, calculatedFov, 20);
       const startingBoundingBuffer = 0.1;
       const [topLeft, bottomRight] = calculateBox([Latitude, Longitude], P1, P2, startingBoundingBuffer);
