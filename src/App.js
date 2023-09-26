@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
+import "react-toastify/dist/ReactToastify.min.css";
 import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import Spinner from "./components/Spinner";
 import ImageList from "./components/Images";
 import UploadButton from "./components/Buttons";
