@@ -230,13 +230,7 @@ export default function App() {
       const dateObj = new Date(exifDateTimeStr);
       const unixTimestamp = Math.floor(dateObj.getTime() / 1000);
 
-      // if exif.Latitude and exif.Longitude are null then return
-      if (exif.latitude === NaN || exif.longitude === NaN) {
-        toast.error("No GPS data found.");
-        setStatus("No GPS data found.");
-        console.log("No GPS data found.");
-        throw new Error("No GPS data found.");
-      }
+
 
 
       const exifData = {
@@ -257,6 +251,19 @@ export default function App() {
         ExposureTime: exif.ExposureTime,
         ShutterSpeedValue: exif.ShutterSpeedValue,
       };
+
+      console.log("latitude: ", exifData.Latitude);
+      console.log("longitude: ", exifData.Longitude);
+
+      // if exif.Latitude and exif.Longitude are null then return
+      if (exifData.Latitude === null || exifData.Longitude === null) {
+        toast.error("No GPS data found.");
+        setStatus("No GPS data found.");
+        console.log("No GPS data found.");
+        throw new Error("No GPS data found.");
+      }
+
+
       return exifData;
     } else {
       console.log("No EXIF data found.")
